@@ -149,9 +149,9 @@ const teamMembers = [
       {/* Logo */}
       <div className="flex items-center">
         <img src={logoimg} alt="AFLogo" height={44} width={44} />
-        <span className="ml-2 text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
-          Ayah Foundation
-        </span>
+       <span className="ml-2 font-brand text-[15px] sm:text-lg lg:text-2xl font-semibold tracking-tight text-gray-900">
+  Ayah Foundation
+</span>
       </div>
 <div></div>
       
