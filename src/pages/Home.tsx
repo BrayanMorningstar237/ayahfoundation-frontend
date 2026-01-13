@@ -1,8 +1,158 @@
-import { useState, useEffect } from 'react';
+import { motion } from "framer-motion";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Heart, Users, Handshake, ArrowRight, Menu, X, Globe, Award, Target, Play } from 'lucide-react';
 import logoimg from "../assets/images/logo/AyahFoundation.jpeg";
-import AnimatedMapClip from "./AnimatedMapClip";
 import { Facebook, Twitter, Linkedin } from 'lucide-react';
+// Import 16 local images
+import wallimg1 from "../assets/images/wall frame/frame_wall_img (1).png";
+import wallimg2 from "../assets/images/wall frame/frame_wall_img (2).jpg";
+import wallimg5 from "../assets/images/wall frame/frame_wall_img (5).jpg";
+import wallimg6 from "../assets/images/wall frame/frame_wall_img (6).jpg";
+import wallimg7 from "../assets/images/wall frame/frame_wall_img (7).jpg";
+import wallimg8 from "../assets/images/wall frame/frame_wall_img (1).jpg";
+import wallimg9 from "../assets/images/wall frame/frame_wall_img (9).jpg";
+// Array of local images
+const IMAGES = [
+  wallimg1,
+  wallimg2,
+  wallimg5,
+  wallimg6,
+  wallimg7,
+  wallimg8,
+  wallimg9
+];
+
+
+
+function AnimatedImageWall() {
+   const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
+
+  // Responsive density - simplified for mobile
+  const COLS = typeof window !== "undefined"
+    ? window.innerWidth < 640
+      ? 4  // Reduced for mobile
+      : window.innerWidth < 1024
+      ? 8 // Reduced for tablet
+      : 8 // Desktop
+    : 5;
+
+  const TOTAL = COLS * Math.floor(COLS / 1.8); // Adjusted aspect ratio
+
+  // Pre-build tiles once
+  const tiles = useMemo(
+    () => Array.from({ length: TOTAL }, (_, i) => ({
+      a: IMAGES[i % IMAGES.length],
+      b: IMAGES[(i + 3) % IMAGES.length],
+      isFlipped: flippedIndices.includes(i)
+    })),
+    [TOTAL, flippedIndices]
+  );
+
+  // Function to randomly flip some tiles
+  const flipRandomTiles = useCallback(() => {
+    const numToFlip = Math.floor(Math.random() * 3) + 1; // Flip 1-3 tiles at a time
+    const newFlippedIndices = new Set(flippedIndices);
+    
+    // Remove some previously flipped tiles
+    if (newFlippedIndices.size > 5) {
+      Array.from(newFlippedIndices)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, Math.floor(Math.random() * 3))
+        .forEach(index => newFlippedIndices.delete(index));
+    }
+    
+    // Add new random tiles to flip
+    for (let i = 0; i < numToFlip; i++) {
+      const randomIndex = Math.floor(Math.random() * TOTAL);
+      newFlippedIndices.add(randomIndex);
+    }
+    
+    setFlippedIndices(Array.from(newFlippedIndices).slice(-15)); // Keep last 15 flipped
+  }, [TOTAL, flippedIndices]);
+
+  // Continuous animation effect
+  useEffect(() => {
+    // Initial flip after 500ms
+    const initialTimeout = setTimeout(() => {
+      flipRandomTiles();
+    }, 700);
+
+    // Set up continuous animation
+    const intervalId = setInterval(flipRandomTiles, 800);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(intervalId);
+    };
+  }, [flipRandomTiles]);
+
+  // Also trigger flips on mouse move for interactivity
+  useEffect(() => {
+    const handleMouseMove = () => {
+      if (Math.random() > 0.7) { // 30% chance on mouse move
+        flipRandomTiles();
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [flipRandomTiles]);
+
+  return (
+    <div className="w-full aspect-[] max-h-[560px] overflow-hidden">
+      <div className="grid gap-px" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
+        {tiles.map((img, i) => (
+          <motion.div
+            key={i}
+            className="relative aspect-square cursor-pointer"
+            animate={{ rotateY: flippedIndices.includes(i) ? 180 : 0 }}
+            transition={{ 
+              duration: 0.8, 
+              ease: "easeInOut",
+              type: "spring",
+              stiffness: 50,
+              damping: 10
+            }}
+            style={{ transformStyle: "preserve-3d", willChange: "transform" }}
+            onClick={() => {
+              setFlippedIndices(prev => 
+                prev.includes(i) 
+                  ? prev.filter(idx => idx !== i)
+                  : [...prev, i]
+              );
+            }}
+            whileHover={{ scale: 1.05 }}
+            onMouseEnter={() => {
+              if (Math.random() > 0.8) { // 20% chance on hover
+                setFlippedIndices(prev => [...prev, i]);
+              }
+            }}
+          >
+            <motion.img
+              src={img.a}
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover backface-hidden"
+              draggable={false}
+              alt={`Community impact ${i + 1}`}
+              whileHover={{ scale: 1.1 }}
+              transition={{ duration: 0.3 }}
+            />
+            <motion.img
+              src={img.b}
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover rotate-y-180 backface-hidden"
+              draggable={false}
+              alt={`Community support ${i + 1}`}
+              whileHover={{ scale: 1.1 }}
+              transition={{ duration: 0.3 }}
+            />
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const Home = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState<Record<string, boolean>>({});
@@ -137,6 +287,7 @@ const teamMembers = [
       image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop"
     }
   ];
+  
   return (
     <div className="min-h-screen bg-white overflow-hidden">
       {/* Navigation */}
@@ -201,71 +352,82 @@ const teamMembers = [
   )}
 </nav>
 
-
-      <section
+<section
   id="home"
-  className="relative pt-24 sm:pt-32 pb-16 px-4 sm:px-6 lg:px-8 min-h-screen flex items-center overflow-hidden bg-white"
+  className="relative pt-14 sm:pt-20 pb-20 lg:px-8 min-h-screen flex items-center overflow-hidden bg-gradient-to-b from-white via-blue-50/40 to-white"
 >
-  <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-12 items-center">
+  {/* Soft background accent */}
+  <div className="absolute -top-32 -right-32 w-[420px] h-[420px] bg-blue-100 rounded-full blur-3xl opacity-50" />
+  <div className="absolute bottom-0 -left-32 w-[320px] h-[320px] bg-blue-50 rounded-full blur-3xl opacity-60" />
+
+  <div className="relative max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-14 -mt-14 items-center">
     
     {/* Text Block */}
     <div
-      className="space-y-6 order-2 lg:order-1 text-center lg:text-left"
-      style={{ animation: "fadeInLeft 1.2s cubic-bezier(0.16, 1, 0.3, 1)" }}
+      className="space-y-7 order-2 lg:order-1 text-center lg:text-left"
+      style={{ animation: "fadeInLeft 1.1s cubic-bezier(0.16, 1, 0.3, 1)" }}
     >
-      <span className="text-xs sm:text-sm font-semibold text-gray-500 tracking-widest uppercase">
-        Welcome to Ayah Foundation
+      <span className="inline-block text-xs sm:text-sm font-semibold tracking-widest uppercase text-blue-600/80">
+        Ayah Foundation
       </span>
 
-      <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight text-gray-900">
-        Justice begins where
-        <span className="block text-blue-600 mt-2">inequality ends</span>
+      <h1 className="font-extrabold text-[2.6rem] sm:text-5xl lg:text-[3.6rem] leading-[1.05] text-gray-900 tracking-tight">
+        Life begins
+        <span className="block mt-2 text-blue-600">
+          where inequality ends
+        </span>
       </h1>
 
-      <p className="text-base sm:text-lg text-gray-600 max-w-lg mx-auto lg:mx-0">
-        We empower communities through education, healthcare, and sustainable development.
+      <p className="text-base sm:text-lg text-gray-600 max-w-xl mx-auto lg:mx-0">
+        We work alongside communities to expand access to education,
+        healthcare, and sustainable opportunities that create lasting impact.
       </p>
 
-      <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full font-semibold shadow-lg transition transform hover:scale-105">
+      <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
+        <button className="bg-blue-600 hover:bg-blue-700 text-white px-9 py-4 rounded-full font-semibold shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5">
           Donate Now
         </button>
 
         <button
           onClick={() => setVideoModal(true)}
-          className="bg-white border border-gray-200 text-gray-900 px-8 py-4 rounded-full font-semibold shadow transition transform hover:scale-105"
+          className="bg-white/90 backdrop-blur border border-gray-200 text-gray-900 px-9 py-4 rounded-full font-semibold shadow transition transform hover:-translate-y-0.5"
         >
-          Watch Video
+          Watch Our Story
         </button>
       </div>
     </div>
 
-    {/* Map Visual */}
-    <div
-      className="relative order-1 lg:order-2"
-      style={{ animation: "fadeInRight 1.2s cubic-bezier(0.16, 1, 0.3, 1)" }}
-    >
-      <div className="relative w-full max-w-md sm:max-w-lg mx-auto">
-        <AnimatedMapClip
-          image="https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=800&fit=crop"
-          className="h-[280px] sm:h-[380px] lg:h-[480px] rounded-3xl shadow-2xl"
-        />
+    {/* Animated Image Wall Block */}
+<div
+  className="relative order-1 lg:order-2 flex justify-center items-start m-0 p-0"
+  style={{ animation: "fadeInRight 1.1s cubic-bezier(0.16, 1, 0.3, 1)" }}
+>
+  <div className="relative w-full max-w-4xl overflow-hidden">
+    {/* Decorative dots */}
+    <div className="absolute -top-6 -left-6 w-4 h-4 lg:w-5 lg:h-5 bg-orange-500 rounded-full z-10" />
+    <div className="absolute top-1/4 -right-10 w-3 h-3 lg:w-4 lg:h-4 bg-green-400 rounded-full z-10" />
+    <div className="absolute bottom-1/3 -left-10 w-3 h-3 lg:w-4 lg:h-4 bg-blue-400 rounded-full z-10" />
+    <div className="absolute -bottom-20 right-5 w-6 h-6 lg:w-8 lg:h-8 bg-orange-400 rounded-full z-10" />
+
+    {/* Background glow (contained, no overflow) */}
+    <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-lg blur-xl -z-10" />
+
+    {/* Image wall */}
+    <div className="relative rounded-lg overflow-hidden shadow-2xl border-4 border-white/20 backdrop-blur-sm ">
+      <AnimatedImageWall />
+
+      {/* Overlay text */}
+      <div className="absolute left-1/2 bottom-4 -translate-x-1/2 w-80 bg-white/10 backdrop-blur-[1.2px] border border-white/20 px-6 py-3 rounded-full shadow-lg pointer-events-none">
+        <span className="text-sm font-bold text-white text-center block">
+          Every pixel represents a life touched
+        </span>
       </div>
     </div>
   </div>
+</div>
 
-  {/* Optional subtle floating effect on map */}
-  <style>{`
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-10px); }
-    }
-    .animate-float-subtle {
-      animation: float 6s ease-in-out infinite;
-    }
-  `}</style>
+  </div>
 </section>
-
 
       {/* Stats Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
@@ -764,9 +926,18 @@ const teamMembers = [
             opacity: 0.6;
           }
         }
+
+        /* CSS for backface-hidden and rotate-y-180 */
+        .backface-hidden {
+          backface-visibility: hidden;
+        }
+
+        .rotate-y-180 {
+          transform: rotateY(180deg);
+        }
       `}</style>
     </div>
   );
 };
 
-export default Home
+export default Home;
