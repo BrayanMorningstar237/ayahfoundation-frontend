@@ -25,133 +25,144 @@ const IMAGES = [
 
 
 function AnimatedImageWall() {
-   const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
+  const [flipped, setFlipped] = useState<Set<number>>(new Set());
+  const [cols, setCols] = useState(8);
 
-  // Responsive density - simplified for mobile
-  const COLS = typeof window !== "undefined"
-    ? window.innerWidth < 640
-      ? 4  // Reduced for mobile
-      : window.innerWidth < 1024
-      ? 8 // Reduced for tablet
-      : 8 // Desktop
-    : 5;
+  /* -------------------------------------------
+     Responsive columns (computed once + resize)
+  --------------------------------------------*/
+  useEffect(() => {
+    const updateCols = () => {
+      const w = window.innerWidth;
+      setCols(w < 640 ? 4 : w < 1024 ? 8 : 8);
+    };
 
-  const TOTAL = COLS * Math.floor(COLS / 1.8); // Adjusted aspect ratio
+    updateCols();
+    window.addEventListener("resize", updateCols);
+    return () => window.removeEventListener("resize", updateCols);
+  }, []);
 
-  // Pre-build tiles once
-  const tiles = useMemo(
-    () => Array.from({ length: TOTAL }, (_, i) => ({
-      a: IMAGES[i % IMAGES.length],
-      b: IMAGES[(i + 3) % IMAGES.length],
-      isFlipped: flippedIndices.includes(i)
-    })),
-    [TOTAL, flippedIndices]
+  const total = useMemo(
+    () => cols * Math.floor(cols / 1.8),
+    [cols]
   );
 
-  // Function to randomly flip some tiles
+  /* -------------------------------------------
+     Static tiles (no flip dependency)
+  --------------------------------------------*/
+  const tiles = useMemo(
+    () =>
+      Array.from({ length: total }, (_, i) => ({
+        a: IMAGES[i % IMAGES.length],
+        b: IMAGES[(i + 3) % IMAGES.length],
+      })),
+    [total]
+  );
+
+  /* -------------------------------------------
+     Flip logic (efficient + capped)
+  --------------------------------------------*/
   const flipRandomTiles = useCallback(() => {
-    const numToFlip = Math.floor(Math.random() * 3) + 1; // Flip 1-3 tiles at a time
-    const newFlippedIndices = new Set(flippedIndices);
-    
-    // Remove some previously flipped tiles
-    if (newFlippedIndices.size > 5) {
-      Array.from(newFlippedIndices)
-        .sort(() => Math.random() - 0.5)
-        .slice(0, Math.floor(Math.random() * 3))
-        .forEach(index => newFlippedIndices.delete(index));
-    }
-    
-    // Add new random tiles to flip
-    for (let i = 0; i < numToFlip; i++) {
-      const randomIndex = Math.floor(Math.random() * TOTAL);
-      newFlippedIndices.add(randomIndex);
-    }
-    
-    setFlippedIndices(Array.from(newFlippedIndices).slice(-15)); // Keep last 15 flipped
-  }, [TOTAL, flippedIndices]);
+    setFlipped(prev => {
+      const next = new Set(prev);
 
-  // Continuous animation effect
+      // Random removals
+      if (next.size > 5) {
+        [...next]
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 2)
+          .forEach(i => next.delete(i));
+      }
+
+      // Random additions
+      const count = Math.floor(Math.random() * 3) + 1;
+      for (let i = 0; i < count; i++) {
+        next.add(Math.floor(Math.random() * total));
+      }
+
+      // Cap size
+      return new Set([...next].slice(-15));
+    });
+  }, [total]);
+
+  /* -------------------------------------------
+     Timed animation
+  --------------------------------------------*/
   useEffect(() => {
-    // Initial flip after 500ms
-    const initialTimeout = setTimeout(() => {
-      flipRandomTiles();
-    }, 700);
-
-    // Set up continuous animation
-    const intervalId = setInterval(flipRandomTiles, 800);
+    const timeout = setTimeout(flipRandomTiles, 700);
+    const interval = setInterval(flipRandomTiles, 800);
 
     return () => {
-      clearTimeout(initialTimeout);
-      clearInterval(intervalId);
+      clearTimeout(timeout);
+      clearInterval(interval);
     };
   }, [flipRandomTiles]);
 
-  // Also trigger flips on mouse move for interactivity
+  /* -------------------------------------------
+     Mouse interaction (throttled by chance)
+  --------------------------------------------*/
   useEffect(() => {
-    const handleMouseMove = () => {
-      if (Math.random() > 0.7) { // 30% chance on mouse move
-        flipRandomTiles();
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    const onMove = () => Math.random() > 0.7 && flipRandomTiles();
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
   }, [flipRandomTiles]);
 
+  /* -------------------------------------------
+     Render
+  --------------------------------------------*/
   return (
-    <div className="w-full aspect-[] max-h-[560px] overflow-hidden">
-      <div className="grid gap-px" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
-        {tiles.map((img, i) => (
-          <motion.div
-            key={i}
-            className="relative aspect-square cursor-pointer"
-            animate={{ rotateY: flippedIndices.includes(i) ? 180 : 0 }}
-            transition={{ 
-              duration: 0.8, 
-              ease: "easeInOut",
-              type: "spring",
-              stiffness: 50,
-              damping: 10
-            }}
-            style={{ transformStyle: "preserve-3d", willChange: "transform" }}
-            onClick={() => {
-              setFlippedIndices(prev => 
-                prev.includes(i) 
-                  ? prev.filter(idx => idx !== i)
-                  : [...prev, i]
-              );
-            }}
-            whileHover={{ scale: 1.05 }}
-            onMouseEnter={() => {
-              if (Math.random() > 0.8) { // 20% chance on hover
-                setFlippedIndices(prev => [...prev, i]);
+    <div className="w-full max-h-[560px] overflow-hidden">
+      <div
+        className="grid gap-px"
+        style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+      >
+        {tiles.map((img, i) => {
+          const isFlipped = flipped.has(i);
+
+          return (
+            <motion.div
+              key={i}
+              className="relative aspect-square cursor-pointer"
+              animate={{ rotateY: isFlipped ? 180 : 0 }}
+              transition={{
+                duration: 0.8,
+                ease: "easeInOut",
+                type: "spring",
+                stiffness: 50,
+                damping: 10,
+              }}
+              style={{ transformStyle: "preserve-3d" }}
+              onClick={() =>
+                setFlipped(prev => {
+                  const next = new Set(prev);
+                  next.has(i) ? next.delete(i) : next.add(i);
+                  return next;
+                })
               }
-            }}
-          >
-            <motion.img
-              src={img.a}
-              loading="lazy"
-              className="absolute inset-0 w-full h-full object-cover backface-hidden"
-              draggable={false}
-              alt={`Community impact ${i + 1}`}
-              whileHover={{ scale: 1.1 }}
-              transition={{ duration: 0.3 }}
-            />
-            <motion.img
-              src={img.b}
-              loading="lazy"
-              className="absolute inset-0 w-full h-full object-cover rotate-y-180 backface-hidden"
-              draggable={false}
-              alt={`Community support ${i + 1}`}
-              whileHover={{ scale: 1.1 }}
-              transition={{ duration: 0.3 }}
-            />
-          </motion.div>
-        ))}
+              whileHover={{ scale: 1.4 }}
+            >
+              <motion.img
+                src={img.a}
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover backface-hidden"
+                draggable={false}
+                alt=""
+              />
+              <motion.img
+                src={img.b}
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover rotate-y-180 backface-hidden"
+                draggable={false}
+                alt=""
+              />
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
 }
+
 
 const Home = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -183,6 +194,35 @@ const Home = () => {
     { number: "20+", label: "Community Projects", icon: Handshake },
     { number: "50+", label: "Volunteers Active", icon: Globe },
   ];
+const newsUpdates = [
+  {
+    title: "Mobile Health Outreach Reaches 5 New Communities",
+    date: "Jan 2026",
+    image: "https://www.afro.who.int/sites/default/files/2022-09/Saratu%2C%20a%20member%20of%20the%20Mobile%20health%20team%20providing%20essential%20health%20service%20in%20a%20nomadic%20setting%20in%20Yobe%20state..jpg",
+    featured: true,
+  },
+  {
+    title: "Emergency Food Distribution Launched",
+    date: "Jan 2026",
+    image: "https://cameroon.un.org/sites/default/files/styles/featured_image/public/2023-02/n.JPG?itok=aqT5pPGN",
+    featured: true,
+  },
+  {
+    title: "Clean Water Project Phase II Begins",
+    date: "Dec 2025",
+    image: "https://images.unsplash.com/photo-1509395176047-4a66953fd231?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    title: "Clean Water Project Phase II Begins",
+    date: "Dec 2025",
+    image: "https://images.unsplash.com/photo-1509395176047-4a66953fd231?auto=format&fit=crop&w=800&q=80",
+  }
+];
+
+const featuredNews = newsUpdates.filter(n => n.featured);
+const regularNews = newsUpdates.filter(n => !n.featured);
+
+
 
   const causes = [
     {
@@ -364,7 +404,7 @@ const teamMembers = [
     
     {/* Text Block */}
     <div
-      className="space-y-7 order-2 lg:order-1 text-center lg:text-left"
+      className="space-y-2 -mt-5 order-2 lg:order-1 text-center lg:text-left"
       style={{ animation: "fadeInLeft 1.1s cubic-bezier(0.16, 1, 0.3, 1)" }}
     >
       <span className="inline-block text-xs sm:text-sm font-semibold tracking-widest uppercase text-blue-600/80">
@@ -597,6 +637,89 @@ const teamMembers = [
           </div>
         </div>
       </section>
+
+{/* News & Updates Section */}
+<section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+  <div className="max-w-7xl mx-auto">
+    {/* Header */}
+    <div className="text-center mb-16">
+      <span className="text-sm font-semibold text-yellow-600 tracking-widest uppercase mb-4 block">
+        News & Updates
+      </span>
+      <h2 className="text-4xl sm:text-5xl font-bold text-gray-900">
+        Latest From the Field
+      </h2>
+      <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
+        Real-time updates from our ongoing projects and community impact initiatives.
+      </p>
+    </div>
+
+    {/* Main Layout */}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      {/* Featured News (left / main) */}
+      <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+        {featuredNews.map((news, index) => (
+          <div
+            key={index}
+            className="relative group overflow-hidden rounded-3xl h-[420px] shadow-lg"
+          >
+            <img
+              src={news.image}
+              alt={news.title}
+              className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+
+            <div className="absolute bottom-6 left-6 right-6 text-white">
+              <span className="text-sm uppercase tracking-widest text-yellow-400">
+                {news.date}
+              </span>
+              <h3 className="text-3xl font-bold mt-2 leading-tight">
+                {news.title}
+              </h3>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Side / Regular News (right column) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
+        {regularNews.map((news, index) => (
+          <div
+            key={index}
+            className="relative group overflow-hidden rounded-2xl h-[200px] shadow-md"
+          >
+            <img
+              src={news.image}
+              alt={news.title}
+              className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+
+            <div className="absolute bottom-4 left-4 right-4 text-white">
+              <span className="text-xs uppercase tracking-widest text-yellow-400">
+                {news.date}
+              </span>
+              <h4 className="text-lg font-semibold mt-1 leading-snug">
+                {news.title}
+              </h4>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* CTA */}
+    <div className="text-center mt-12">
+      <button className="inline-flex items-center px-6 py-3 rounded-full bg-yellow-600 text-white font-semibold hover:bg-yellow-700 transition-colors">
+        View All Updates
+        <ArrowRight className="w-4 h-4 ml-2" />
+      </button>
+    </div>
+  </div>
+</section>
+
 
       {/* Video Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-blue-800 relative overflow-hidden">
