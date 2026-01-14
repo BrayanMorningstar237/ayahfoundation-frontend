@@ -15,17 +15,17 @@ export const HeroAPI = {
     const formData = new FormData();
 
     files.forEach(file => {
-      formData.append('images', file); // MUST match uploadMultiple middleware
+      formData.append('images', file); // MUST be "images"
     });
 
     const res = await axios.post(
-      '/dashboard/images', // ✅ FIXED
+      '/dashboard/hero/images', // ✅ FIXED ENDPOINT
       formData
-      // Axios auto-sets multipart boundary
     );
 
-    return res.data;
-  },
+  return res.data;
+}
+,
 
   async deleteImage(publicId: string) {
   const encodedId = encodeURIComponent(publicId);

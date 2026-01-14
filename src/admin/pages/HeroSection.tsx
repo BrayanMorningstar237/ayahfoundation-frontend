@@ -54,32 +54,31 @@ const HeroSection = () => {
   };
 
   const handleImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    if (!e.target.files) return;
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  if (!e.target.files) return;
 
-    try {
-      setUploading(true);
-      const files = Array.from(e.target.files);
-      const res = await HeroAPI.uploadImages(files);
+  try {
+    setUploading(true);
+    const files = Array.from(e.target.files);
 
-      setHeroData({
-        ...heroData,
-        wallImages: [...heroData.wallImages, ...res.data]
-      });
+    const updatedHero = await HeroAPI.uploadImages(files);
 
-      setDirty(true);
-    } catch {
-      setToast({
-        message: 'Image upload failed',
-        type: 'error'
-      });
-      setTimeout(() => setToast(null), 3000);
-    } finally {
-      setUploading(false);
-      e.target.value = '';
-    }
-  };
+    setHeroData(updatedHero); // ✅ FIX
+    setDirty(true);
+  } catch (err) {
+    console.error('UPLOAD ERROR:', err);
+    setToast({
+      message: 'Image upload failed',
+      type: 'error'
+    });
+    setTimeout(() => setToast(null), 3000);
+  } finally {
+    setUploading(false);
+    e.target.value = '';
+  }
+};
+
 
   const handleDeleteImage = async (publicId: string) => {
     if (!confirm('Remove this image?')) return;
