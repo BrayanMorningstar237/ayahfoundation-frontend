@@ -400,11 +400,11 @@ const teamMembers = [
   <div className="absolute -top-32 -right-32 w-[420px] h-[420px] bg-blue-100 rounded-full blur-3xl opacity-50" />
   <div className="absolute bottom-0 -left-32 w-[320px] h-[320px] bg-blue-50 rounded-full blur-3xl opacity-60" />
 
-  <div className="relative max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-14 -mt-14 items-center">
+  <div className="relative max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-14  items-center">
     
     {/* Text Block */}
     <div
-      className="space-y-2 -mt-5 order-2 lg:order-1 text-center lg:text-left"
+      className="space-y-2 px-5 -mt-5 order-2 lg:order-1 text-center lg:text-left"
       style={{ animation: "fadeInLeft 1.1s cubic-bezier(0.16, 1, 0.3, 1)" }}
     >
       <span className="inline-block text-xs sm:text-sm font-semibold tracking-widest uppercase text-blue-600/80">
@@ -499,7 +499,7 @@ const teamMembers = [
       {/* About Us Section */}
       <section 
         id="about"
-        className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50"
+        className="py-20 px-5 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50"
       >
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
