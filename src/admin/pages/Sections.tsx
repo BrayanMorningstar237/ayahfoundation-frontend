@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Trash2, Image as ImageIcon, Save } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Plus, Trash2, Image as ImageIcon, Save, Upload, Loader2 } from 'lucide-react';
 
 /* ================= TYPES ================= */
 
@@ -9,11 +9,6 @@ interface StatItem {
   label: string;
 }
 
-interface TextBlock {
-  id: string;
-  value: string;
-}
-
 interface AboutBlock {
   id: string;
   type: 'image' | 'subtitle' | 'text';
@@ -21,19 +16,113 @@ interface AboutBlock {
   description?: string;
 }
 
+/* ================= IMAGE UPLOAD HELPER ================= */
+
+const uploadImage = async (file: File, folder: string) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  formData.append('folder', folder);
+
+  const res = await fetch(
+    'http://localhost:5000/api/dashboard/upload/single',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+      },
+      body: formData
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Upload failed: ${err}`);
+  }
+
+  return res.json(); // { url, publicId }
+};
+
 /* ================= COMPONENT ================= */
 
 const Sections = () => {
   const [dirty, setDirty] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [uploadingImages, setUploadingImages] = useState<Set<string>>(new Set());
 
-  /* ================= STATS (TOP SECTION) ================= */
-  const [stats, setStats] = useState<StatItem[]>([
-    { id: '1', number: '5,000+', label: 'Lives Touched' },
-    { id: '2', number: '150+', label: 'Families Supported' },
-    { id: '3', number: '20+', label: 'Community Projects' },
-    { id: '4', number: '50+', label: 'Volunteers Active' }
-  ]);
+  /* ================= EMPTY INITIAL STATES ================= */
+  
+  // Stats (Top Section)
+  const [stats, setStats] = useState<StatItem[]>([]);
+  
+  // About Header
+  const [aboutLabel, setAboutLabel] = useState('');
+  const [aboutTitle, setAboutTitle] = useState('');
+  const [aboutIntro, setAboutIntro] = useState('');
+  
+  // About Main Image + Overlay Stat
+  const [mainImage, setMainImage] = useState<string | null>(null);
+  const [mainImageDescription, setMainImageDescription] = useState('');
+  const [overlayStat, setOverlayStat] = useState<StatItem>({
+    id: 'overlay',
+    number: '',
+    label: ''
+  });
+  
+  // About Flexible Blocks (ORDER PRESERVED)
+  const [aboutBlocks, setAboutBlocks] = useState<AboutBlock[]>([]);
+  
+  // About Highlight Stats
+  const [highlightStats, setHighlightStats] = useState<StatItem[]>([]);
 
+  /* ================= FETCH REAL DATA FROM BACKEND ================= */
+  
+  useEffect(() => {
+    const fetchSection = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch('http://localhost:5000/api/sections/about');
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
+        const data = await res.json();
+        const content = data.content || {};
+        // TOP STATS (Impact Stats at the top)
+setStats(content.stats || []);
+
+        // HEADER
+        setAboutLabel(content.header?.label || '');
+        setAboutTitle(content.header?.title || '');
+        setAboutIntro(content.header?.intro || '');
+        
+        // MAIN IMAGE
+        setMainImage(content.mainImage?.url || null);
+        setMainImageDescription(content.mainImage?.description || '');
+        setOverlayStat(content.mainImage?.overlayStat || {
+          id: 'overlay',
+          number: '',
+          label: ''
+        });
+        
+        // FLEXIBLE BLOCKS (ORDER PRESERVED FROM DB)
+        setAboutBlocks(content.blocks || []);
+        
+        // HIGHLIGHT STATS
+        setHighlightStats(content.highlightStats || []);
+        
+      } catch (err) {
+        console.error('Failed to load section:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchSection();
+  }, []);
+
+  /* ================= STATS HELPERS ================= */
+  
   const updateStat = (id: string, key: keyof StatItem, value: string) => {
     setStats(prev =>
       prev.map(s => (s.id === id ? { ...s, [key]: value } : s))
@@ -54,107 +143,82 @@ const Sections = () => {
     setDirty(true);
   };
 
-  /* ================= ABOUT HEADER ================= */
-  const [aboutLabel, setAboutLabel] = useState('Who We Are');
-  const [aboutTitle, setAboutTitle] = useState('About Ayah Foundation');
-  const [aboutIntro, setAboutIntro] = useState(
-    'Founded in the heart of Cameroon, Ayah Foundation is a beacon of hope dedicated to transforming lives.'
-  );
-
-  /* ================= ABOUT IMAGE + OVERLAY STAT ================= */
-  const [mainImage, setMainImage] = useState<string | null>(
-    'https://images.unsplash.com/photo-1509099863731-ef4bff19e808?w=800'
-  );
-  const [mainImageDescription, setMainImageDescription] = useState(
-    'Ayah Foundation headquarters'
-  );
-  const [endImage, setEndImage] = useState<string | null>(null);
-  const [endImageDescription, setEndImageDescription] = useState(
-    'Ayah Foundation community impact'
-  );
-
-  const [overlayStat, setOverlayStat] = useState<StatItem>({
-    id: 'overlay',
-    number: '8+',
-    label: 'Years of Impact'
-  });
-
-  /* ================= ABOUT TEXT ================= */
-  const [storyTitle, setStoryTitle] = useState('Our Story');
-
-  const [storyParagraphs, setStoryParagraphs] = useState<TextBlock[]>([
-    {
-      id: 'p1',
-      value:
-        'What began as a small grassroots initiative in 2018 has blossomed into a comprehensive organization.'
-    },
-    {
-      id: 'p2',
-      value:
-        'Today, we work hand-in-hand with communities, ensuring sustainable impact.'
+  /* ================= IMAGE HANDLERS ================= */
+  
+  const handleMainImageUpload = async (file: File) => {
+    const uploadId = 'main-image';
+    try {
+      setUploadingImages(prev => new Set(prev).add(uploadId));
+      
+      // Create preview
+      const previewUrl = URL.createObjectURL(file);
+      setMainImage(previewUrl);
+      
+      // Upload to Cloudinary
+      const uploaded = await uploadImage(file, 'sections/about');
+      
+      // Replace preview with Cloudinary URL
+      setMainImage(uploaded.url);
+      setDirty(true);
+      
+    } catch (error) {
+      console.error('Failed to upload main image:', error);
+      setMainImage(null);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setUploadingImages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(uploadId);
+        return newSet;
+      });
+      
+      // Clean up blob URL
+      setTimeout(() => {
+        if (file) {
+          URL.revokeObjectURL(URL.createObjectURL(file));
+        }
+      }, 1000);
     }
-  ]);
+  };
 
-  /* ================= ABOUT BLOCKS (New section for flexible content) ================= */
-  const [aboutBlocks, setAboutBlocks] = useState<AboutBlock[]>([
-    {
-      id: 'b1',
-      type: 'subtitle',
-      value: 'Our Mission'
-    },
-    {
-      id: 'b2',
-      type: 'text',
-      value: 'To empower communities through sustainable initiatives.'
-    },
-    {
-      id: 'b3',
-      type: 'image',
-      value: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800',
-      description: 'Community outreach program'
+  const handleBlockImageUpload = async (blockId: string, file: File) => {
+    const uploadId = `block-${blockId}`;
+    try {
+      setUploadingImages(prev => new Set(prev).add(uploadId));
+      
+      // Create preview
+      const previewUrl = URL.createObjectURL(file);
+      updateAboutBlock(blockId, { value: previewUrl });
+      
+      // Upload to Cloudinary
+      const uploaded = await uploadImage(file, 'sections/about/blocks');
+      
+      // Replace preview with Cloudinary URL
+      updateAboutBlock(blockId, { value: uploaded.url });
+      setDirty(true);
+      
+    } catch (error) {
+      console.error('Failed to upload block image:', error);
+      updateAboutBlock(blockId, { value: '' });
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setUploadingImages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(uploadId);
+        return newSet;
+      });
+      
+      // Clean up blob URL
+      setTimeout(() => {
+        if (file) {
+          URL.revokeObjectURL(URL.createObjectURL(file));
+        }
+      }, 1000);
     }
-  ]);
-
-  /* ================= HIGHLIGHT STATS (ABOUT) ================= */
-  const [highlightStats, setHighlightStats] = useState<StatItem[]>([
-    { id: 'h1', number: '150+', label: 'Partner Organizations' },
-    { id: 'h2', number: '25+', label: 'Awards Received' }
-  ]);
-
-  /* ================= HELPERS ================= */
-
-  const updateParagraph = (id: string, value: string) => {
-    setStoryParagraphs(prev =>
-      prev.map(p => (p.id === id ? { ...p, value } : p))
-    );
-    setDirty(true);
-  };
-
-  const addParagraph = () => {
-    setStoryParagraphs(prev => [
-      ...prev,
-      { id: crypto.randomUUID(), value: '' }
-    ]);
-    setDirty(true);
-  };
-
-  const removeParagraph = (id: string) => {
-    setStoryParagraphs(prev => prev.filter(p => p.id !== id));
-    setDirty(true);
-  };
-
-  const updateHighlightStat = (
-    id: string,
-    key: keyof StatItem,
-    value: string
-  ) => {
-    setHighlightStats(prev =>
-      prev.map(s => (s.id === id ? { ...s, [key]: value } : s))
-    );
-    setDirty(true);
   };
 
   /* ================= ABOUT BLOCKS HELPERS ================= */
+  
   const addAboutBlock = (type: AboutBlock['type']) => {
     const newBlock: AboutBlock = {
       id: crypto.randomUUID(),
@@ -178,75 +242,152 @@ const Sections = () => {
     setDirty(true);
   };
 
+  /* ================= HIGHLIGHT STATS HELPERS ================= */
+  
+  const updateHighlightStat = (
+    id: string,
+    key: keyof StatItem,
+    value: string
+  ) => {
+    setHighlightStats(prev =>
+      prev.map(s => (s.id === id ? { ...s, [key]: value } : s))
+    );
+    setDirty(true);
+  };
+
+  /* ================= SAVE TO BACKEND WITH SAFETY CHECK ================= */
+  
   const handleSave = async () => {
-  await fetch("/api/sections/about", {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      // Authorization: `Bearer ${token}`
+    // Safety check: Prevent saving blob URLs
+    const hasBlobUrls = 
+      mainImage?.startsWith('blob:') ||
+      aboutBlocks.some(b => b.type === 'image' && b.value?.startsWith('blob:'));
+    
+    if (hasBlobUrls) {
+      alert('Please wait for all images to finish uploading before saving.');
+      return;
+    }
+
+    // Check if any uploads are still in progress
+    if (uploadingImages.size > 0) {
+      alert('Please wait for all images to finish uploading.');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:5000/api/sections/about', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify({
+  content: {
+    stats, // ✅ FIXED — TOP STATS NOW SAVED
+    header: {
+      label: aboutLabel,
+      title: aboutTitle,
+      intro: aboutIntro
     },
-    body: JSON.stringify({
-      content: {
-        header: {
-          label: aboutLabel,
-          title: aboutTitle,
-          intro: aboutIntro
-        },
-        mainImage: {
-          url: mainImage,
-          description: mainImageDescription,
-          overlayStat
-        },
-        blocks: aboutBlocks,
-        highlightStats
+    mainImage: {
+      url: mainImage,
+      description: mainImageDescription,
+      overlayStat
+    },
+    blocks: aboutBlocks,
+    highlightStats
+  }
+})
+
+      });
+      
+      if (response.ok) {
+        setDirty(false);
+        alert('Successfully saved!');
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to save:', errorText);
+        alert(`Failed to save: ${errorText}`);
       }
-    })
-  });
+    } catch (error) {
+      console.error('Error saving:', error);
+      alert('Error saving. Please check your connection.');
+    }
+  };
 
-  setDirty(false);
-};
-
+  /* ================= LOADING STATE ================= */
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh] px-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading content from database...</p>
+        </div>
+      </div>
+    );
+  }
 
   /* ================= UI ================= */
 
   return (
-    <div className="space-y-16 pb-28">
-
-      <h1 className="text-3xl font-bold">Home Page Sections</h1>
+    <div className="space-y-8 md:space-y-12 pb-24 md:pb-32 px-4 md:px-6 max-w-7xl mx-auto">
+      {/* HEADER WITH SAVE BUTTON */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 pt-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Home Page Sections</h1>
+        {dirty && (
+          <button
+            onClick={handleSave}
+            disabled={uploadingImages.size > 0}
+            className="w-full md:w-auto flex items-center justify-center gap-2 px-4 md:px-6 py-3 rounded-lg md:rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
+          >
+            {uploadingImages.size > 0 ? (
+              <>
+                <Loader2 className="animate-spin" size={18} />
+                <span className="hidden md:inline">Uploading ({uploadingImages.size})...</span>
+                <span className="md:hidden">Uploading...</span>
+              </>
+            ) : (
+              <>
+                <Save size={18} />
+                <span className="hidden md:inline">Save Changes</span>
+                <span className="md:hidden">Save</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
 
       {/* ================= STATS SECTION (TOP) ================= */}
-      <section className="bg-white border rounded-2xl p-6 space-y-6">
-        <h2 className="text-xl font-semibold">Impact Stats</h2>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <section className="bg-white border border-gray-200 rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-6">
+        <h2 className="text-lg md:text-xl font-semibold text-gray-900">Impact Stats</h2>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {stats.map(stat => (
             <div
               key={stat.id}
-              className="relative bg-gray-50 p-4 rounded-xl border space-y-3"
+              className="relative bg-gray-50 p-4 rounded-lg md:rounded-xl border border-gray-200 space-y-2 md:space-y-3"
             >
               <button
                 onClick={() => removeStat(stat.id)}
                 className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
+                aria-label="Remove stat"
               >
                 <Trash2 size={16} />
               </button>
 
               <input
                 value={stat.number}
-                onChange={e =>
-                  updateStat(stat.id, 'number', e.target.value)
-                }
+                onChange={e => updateStat(stat.id, 'number', e.target.value)}
                 placeholder="150+"
-                className="w-full border rounded-lg px-3 py-2 font-bold text-lg"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 font-bold text-lg md:text-xl bg-white"
               />
 
               <input
                 value={stat.label}
-                onChange={e =>
-                  updateStat(stat.id, 'label', e.target.value)
-                }
+                onChange={e => updateStat(stat.id, 'label', e.target.value)}
                 placeholder="Label"
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
               />
             </div>
           ))}
@@ -254,15 +395,14 @@ const Sections = () => {
 
         <button
           onClick={addStat}
-          className="text-sm text-blue-600 flex items-center gap-2"
+          className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-2"
         >
           <Plus size={16} /> Add Stat
         </button>
       </section>
 
       {/* ================= ABOUT SECTION ================= */}
-      <section className="bg-white border rounded-2xl p-6 space-y-8">
-
+      <section className="bg-white border border-gray-200 rounded-xl md:rounded-2xl p-4 md:p-6 space-y-6 md:space-y-8">
         {/* HEADER */}
         <div className="space-y-3">
           <input
@@ -271,7 +411,8 @@ const Sections = () => {
               setAboutLabel(e.target.value);
               setDirty(true);
             }}
-            className="w-full border rounded-lg px-3 py-2 text-sm uppercase tracking-widest text-yellow-600"
+            placeholder="Section Label (e.g., Who We Are)"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs md:text-sm uppercase tracking-widest text-yellow-600 bg-white"
           />
 
           <input
@@ -280,7 +421,8 @@ const Sections = () => {
               setAboutTitle(e.target.value);
               setDirty(true);
             }}
-            className="w-full border rounded-lg px-3 py-2 text-2xl font-bold"
+            placeholder="Section Title"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xl md:text-2xl font-bold text-gray-900 bg-white"
           />
 
           <textarea
@@ -289,50 +431,74 @@ const Sections = () => {
               setAboutIntro(e.target.value);
               setDirty(true);
             }}
-            rows={3}
-            className="w-full border rounded-lg px-3 py-2"
+            rows={2}
+            placeholder="Section Introduction"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white resize-y min-h-[80px]"
           />
         </div>
 
         {/* ================= ABOUT MAIN IMAGE ================= */}
-        <div className="space-y-4">
-          <label className="font-medium flex items-center gap-2">
-            <ImageIcon size={16} /> About Main Image
-          </label>
+        <div className="space-y-3 md:space-y-4">
+          <div className="flex items-center justify-between">
+            <label className="font-medium text-gray-900 flex items-center gap-2">
+              <ImageIcon size={18} /> About Main Image
+            </label>
+            {uploadingImages.has('main-image') && (
+              <span className="text-sm text-blue-600 flex items-center gap-1">
+                <Loader2 className="animate-spin" size={14} /> Uploading...
+              </span>
+            )}
+          </div>
 
           {/* IMAGE PREVIEW */}
-          <div className="relative rounded-2xl overflow-hidden border bg-gray-50">
+          <div className="relative rounded-xl md:rounded-2xl overflow-hidden border border-gray-300 bg-gray-50">
             {mainImage ? (
-              <img
-                src={mainImage}
-                alt={mainImageDescription}
-                className="w-full h-80 object-cover"
-              />
+              <>
+                <div className="relative w-full">
+                  <img
+                    src={mainImage}
+                    alt={mainImageDescription}
+                    className="w-full h-48 md:h-80 object-contain bg-gray-100"
+                    loading="lazy"
+                  />
+                  {mainImage.startsWith('blob:') && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <div className="text-white text-center">
+                        <Loader2 className="animate-spin mx-auto mb-2" size={28} />
+                        <p className="text-sm font-medium">Uploading...</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* OVERLAY STAT - Responsive positioning */}
+                {mainImage && !mainImage.startsWith('blob:') && (
+                  <div className="absolute bottom-2 right-2 md:bottom-4 md:right-4 bg-blue-600 text-white p-3 md:p-4 lg:p-6 rounded-xl md:rounded-2xl shadow-lg max-w-[160px] md:max-w-none">
+                    <input
+                      value={overlayStat.number}
+                      onChange={e => {
+                        setOverlayStat({ ...overlayStat, number: e.target.value });
+                        setDirty(true);
+                      }}
+                      placeholder="8+"
+                      className="bg-transparent text-2xl md:text-3xl lg:text-4xl font-bold w-16 md:w-24 outline-none placeholder-blue-300"
+                    />
+                    <input
+                      value={overlayStat.label}
+                      onChange={e => {
+                        setOverlayStat({ ...overlayStat, label: e.target.value });
+                        setDirty(true);
+                      }}
+                      placeholder="Years of Impact"
+                      className="bg-transparent text-xs md:text-sm outline-none w-full placeholder-blue-300 mt-1"
+                    />
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="h-80 flex items-center justify-center text-gray-400 text-sm">
-                No image selected
-              </div>
-            )}
-
-            {/* OVERLAY STAT (same as frontend) */}
-            {mainImage && (
-              <div className="absolute -bottom-6 -right-6 bg-blue-600 text-white p-6 rounded-2xl shadow-xl">
-                <input
-                  value={overlayStat.number}
-                  onChange={e => {
-                    setOverlayStat({ ...overlayStat, number: e.target.value });
-                    setDirty(true);
-                  }}
-                  className="bg-transparent text-4xl font-bold w-24 outline-none"
-                />
-                <input
-                  value={overlayStat.label}
-                  onChange={e => {
-                    setOverlayStat({ ...overlayStat, label: e.target.value });
-                    setDirty(true);
-                  }}
-                  className="bg-transparent text-sm outline-none w-40"
-                />
+              <div className="h-48 md:h-80 flex flex-col items-center justify-center text-gray-400 text-sm">
+                <ImageIcon size={48} className="mb-3 text-gray-300" />
+                <p>No image selected</p>
               </div>
             )}
           </div>
@@ -344,279 +510,274 @@ const Sections = () => {
               setMainImageDescription(e.target.value);
               setDirty(true);
             }}
-            placeholder="Image description (e.g. Ayah Foundation headquarters)"
-            className="w-full border rounded-lg px-3 py-2 text-sm"
+            placeholder="Image description"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
           />
 
-          {/* IMAGE ACTIONS */}
-          <div className="flex gap-3">
-            {/* REPLACE */}
-            <label className="cursor-pointer">
+          {/* IMAGE ACTIONS - Mobile responsive */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <label className="cursor-pointer flex-1">
               <input
                 type="file"
                 hidden
                 accept="image/*"
-                onChange={e => {
+                onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
-                  setMainImage(URL.createObjectURL(file));
-                  setDirty(true);
+                  await handleMainImageUpload(file);
                 }}
+                disabled={uploadingImages.has('main-image')}
               />
-              <div className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm hover:bg-blue-700 transition">
-                Replace Image
+              <div className={`w-full px-4 py-3 rounded-lg text-white text-sm transition flex items-center justify-center gap-2 ${
+                uploadingImages.has('main-image') 
+                  ? 'bg-blue-400 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}>
+                {uploadingImages.has('main-image') ? (
+                  <>
+                    <Loader2 className="animate-spin" size={16} />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload size={16} />
+                    {mainImage ? 'Replace Image' : 'Upload Image'}
+                  </>
+                )}
               </div>
             </label>
 
-            {/* REMOVE */}
-            <button
-              onClick={() => {
-                setMainImage(null);
-                setDirty(true);
-              }}
-              className="px-4 py-2 rounded-xl border text-sm text-red-600 hover:bg-red-50"
-            >
-              Remove Image
-            </button>
-          </div>
-        </div>
-
-        {/* STORY */}
-        <div className="space-y-4">
-          <input
-            value={storyTitle}
-            onChange={e => {
-              setStoryTitle(e.target.value);
-              setDirty(true);
-            }}
-            className="w-full border rounded-lg px-3 py-2 text-xl font-bold"
-          />
-
-          {storyParagraphs.map(p => (
-            <div key={p.id} className="relative">
-              <textarea
-                value={p.value}
-                onChange={e => updateParagraph(p.id, e.target.value)}
-                rows={3}
-                className="w-full border rounded-lg px-3 py-2"
-              />
+            {mainImage && !uploadingImages.has('main-image') && (
               <button
-                onClick={() => removeParagraph(p.id)}
-                className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
+                onClick={() => {
+                  setMainImage(null);
+                  setDirty(true);
+                }}
+                className="px-4 py-3 rounded-lg border border-gray-300 text-sm text-red-600 hover:bg-red-50 hover:border-red-300 transition flex-1 sm:flex-none"
               >
-                <Trash2 size={14} />
+                Remove Image
               </button>
-            </div>
-          ))}
-
-          <button
-            onClick={addParagraph}
-            className="text-sm text-blue-600"
-          >
-            + Add Paragraph
-          </button>
-        </div>
-
-        {/* ================= END IMAGE (AFTER LAST PARAGRAPH) ================= */}
-        <div className="space-y-4 border rounded-2xl p-4 bg-gray-50">
-          <label className="font-medium flex items-center gap-2">
-            <ImageIcon size={16} /> Another image (can be in between text)
-          </label>
-
-          {/* IMAGE PREVIEW */}
-          <div className="rounded-2xl overflow-hidden border bg-white">
-            {endImage ? (
-              <img
-                src={endImage}
-                alt={endImageDescription}
-                className="w-full h-72 object-cover"
-              />
-            ) : (
-              <div className="h-72 flex items-center justify-center text-gray-400 text-sm">
-                No image selected
-              </div>
             )}
           </div>
-
-          {/* IMAGE DESCRIPTION */}
-          <input
-            value={endImageDescription}
-            onChange={e => {
-              setEndImageDescription(e.target.value);
-              setDirty(true);
-            }}
-            placeholder="Image description (e.g. Community development project)"
-            className="w-full border rounded-lg px-3 py-2 text-sm"
-          />
-
-          {/* IMAGE ACTIONS */}
-          <div className="flex gap-3">
-            {/* REPLACE */}
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                hidden
-                accept="image/*"
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  setEndImage(URL.createObjectURL(file));
-                  setDirty(true);
-                }}
-              />
-              <div className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm hover:bg-blue-700 transition">
-                Replace Image
-              </div>
-            </label>
-
-            {/* REMOVE */}
-            <button
-              onClick={() => {
-                setEndImage(null);
-                setDirty(true);
-              }}
-              className="px-4 py-2 rounded-xl border text-sm text-red-600 hover:bg-red-50"
-            >
-              Remove Image
-            </button>
-          </div>
         </div>
 
-        {/* ================= FLEXIBLE CONTENT BLOCKS ================= */}
-        <div className="space-y-4">
-          <h3 className="font-medium text-lg">Additional Content</h3>
+        {/* ================= FLEXIBLE CONTENT BLOCKS (ORDER PRESERVED) ================= */}
+        <div className="space-y-4 md:space-y-6">
+          <h3 className="font-medium text-lg text-gray-900">Content Blocks</h3>
           
-          {aboutBlocks.map(block => (
-            <div key={block.id} className="border rounded-2xl p-4 bg-gray-50 space-y-3 relative">
-              <button
-                onClick={() => removeAboutBlock(block.id)}
-                className="absolute top-3 right-3 text-gray-400 hover:text-red-500"
-              >
-                <Trash2 size={16} />
-              </button>
-
-              {block.type === 'image' && (
-                <>
-                  <div className="rounded-xl overflow-hidden border bg-white">
-                    {block.value ? (
-                      <img
-                        src={block.value}
-                        alt={block.description}
-                        className="w-full h-48 object-cover"
-                      />
-                    ) : (
-                      <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
-                        No image selected
-                      </div>
-                    )}
+          {aboutBlocks.length === 0 ? (
+            <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 bg-gray-50">
+              <ImageIcon size={32} className="mx-auto mb-3 text-gray-400" />
+              <p>No content blocks yet</p>
+              <p className="text-sm text-gray-400 mt-1">Add your first block below</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {aboutBlocks.map((block, index) => (
+                <div key={block.id} className="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-3 relative">
+                  <div className="absolute top-3 left-3 text-xs text-gray-500 bg-white px-2 py-1 rounded border">
+                    {index + 1}
                   </div>
                   
-                  <input
-                    value={block.description || ''}
-                    onChange={e => updateAboutBlock(block.id, { description: e.target.value })}
-                    placeholder="Image description"
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
-                  />
-                  
-                  <label className="cursor-pointer inline-block">
+                  <button
+                    onClick={() => removeAboutBlock(block.id)}
+                    className="absolute z-50 p-2 rounded-bl-xl bg-blue-600 top-3 right-3 text-white hover:text-red-500"
+                    disabled={uploadingImages.has(`block-${block.id}`)}
+                    aria-label="Remove block"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+
+                  {block.type === 'image' && (
+                    <>
+                      <div className="rounded-lg overflow-hidden border border-gray-300 bg-white relative">
+                        {block.value ? (
+                          <>
+                            <div className="w-full aspect-video flex items-center justify-center bg-gray-100">
+                              <img
+                                src={block.value}
+                                alt={block.description}
+                                className="max-w-full max-h-full object-contain"
+                                loading="lazy"
+                              />
+                            </div>
+                            {block.value.startsWith('blob:') && (
+                              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                <div className="text-white text-center">
+                                  <Loader2 className="animate-spin mx-auto mb-2" size={24} />
+                                  <p className="text-sm font-medium">Uploading...</p>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="h-48 flex flex-col items-center justify-center text-gray-400 text-sm">
+                            <ImageIcon size={32} className="mb-2 text-gray-300" />
+                            <p>No image selected</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <input
+                        value={block.description || ''}
+                        onChange={e => updateAboutBlock(block.id, { description: e.target.value })}
+                        placeholder="Image description"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                        disabled={uploadingImages.has(`block-${block.id}`)}
+                      />
+                      
+                      <div className="flex gap-2">
+                        <label className="cursor-pointer flex-1">
+                          <input
+                            type="file"
+                            hidden
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              await handleBlockImageUpload(block.id, file);
+                            }}
+                            disabled={uploadingImages.has(`block-${block.id}`)}
+                          />
+                          <div className={`w-full px-4 py-2 rounded-lg text-white text-sm flex items-center justify-center gap-2 ${
+                            uploadingImages.has(`block-${block.id}`)
+                              ? 'bg-blue-400 cursor-not-allowed'
+                              : 'bg-blue-600 hover:bg-blue-700'
+                          }`}>
+                            {uploadingImages.has(`block-${block.id}`) ? (
+                              <>
+                                <Loader2 className="animate-spin" size={14} />
+                                Uploading...
+                              </>
+                            ) : (
+                              'Replace Image'
+                            )}
+                          </div>
+                        </label>
+                      </div>
+                    </>
+                  )}
+
+                  {block.type === 'subtitle' && (
                     <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={e => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        updateAboutBlock(block.id, {
-                          value: URL.createObjectURL(file)
-                        });
-                      }}
+                      value={block.value}
+                      onChange={e => updateAboutBlock(block.id, { value: e.target.value })}
+                      placeholder="Subtitle"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base md:text-lg font-semibold text-gray-900 bg-white"
                     />
-                    <div className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm">
-                      Replace Image
-                    </div>
-                  </label>
-                </>
-              )}
+                  )}
 
-              {block.type === 'subtitle' && (
-                <input
-                  value={block.value}
-                  onChange={e => updateAboutBlock(block.id, { value: e.target.value })}
-                  placeholder="Subtitle"
-                  className="w-full border rounded-lg px-3 py-2 text-lg font-semibold"
-                />
-              )}
-
-              {block.type === 'text' && (
-                <textarea
-                  value={block.value}
-                  onChange={e => updateAboutBlock(block.id, { value: e.target.value })}
-                  rows={3}
-                  placeholder="Text content"
-                  className="w-full border rounded-lg px-3 py-2"
-                />
-              )}
+                  {block.type === 'text' && (
+                    <textarea
+                      value={block.value}
+                      onChange={e => updateAboutBlock(block.id, { value: e.target.value })}
+                      rows={3}
+                      placeholder="Text content"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white resize-y min-h-[100px]"
+                    />
+                  )}
+                </div>
+              ))}
             </div>
-          ))}
+          )}
 
-          {/* ================= THE THREE BUTTONS ================= */}
-          <div className="flex gap-4">
+          {/* ADD BLOCK BUTTONS - Responsive layout */}
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => addAboutBlock('image')}
-              className="text-sm text-blue-600 px-4 py-2 border border-blue-600 rounded-lg hover:bg-blue-50"
+              className="flex-1 text-center px-4 py-3 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg transition flex items-center justify-center gap-2"
             >
-              + Add image
+              <ImageIcon size={16} />
+              <span>Add image</span>
             </button>
             <button
               onClick={() => addAboutBlock('subtitle')}
-              className="text-sm text-blue-600 px-4 py-2 border border-blue-600 rounded-lg hover:bg-blue-50"
+              className="flex-1 text-center px-4 py-3 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg transition flex items-center justify-center gap-2"
             >
-              + Add subtitle
+              <span className="font-bold">T</span>
+              <span>Add subtitle</span>
             </button>
             <button
               onClick={() => addAboutBlock('text')}
-              className="text-sm text-blue-600 px-4 py-2 border border-blue-600 rounded-lg hover:bg-blue-50"
+              className="flex-1 text-center px-4 py-3 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg transition flex items-center justify-center gap-2"
             >
-              + Add text
+              <span className="text-lg">¶</span>
+              <span>Add text</span>
             </button>
           </div>
         </div>
 
         {/* HIGHLIGHT STATS */}
-        <div className="grid sm:grid-cols-2 gap-4">
-          {highlightStats.map(stat => (
-            <div
-              key={stat.id}
-              className="bg-gray-50 p-4 rounded-xl space-y-2"
-            >
-              <input
-                value={stat.number}
-                onChange={e =>
-                  updateHighlightStat(stat.id, 'number', e.target.value)
-                }
-                className="w-full text-2xl font-bold border rounded-lg px-3 py-2"
-              />
-              <input
-                value={stat.label}
-                onChange={e =>
-                  updateHighlightStat(stat.id, 'label', e.target.value)
-                }
-                className="w-full text-sm border rounded-lg px-3 py-2"
-              />
-            </div>
-          ))}
+        <div className="space-y-4">
+          <h3 className="font-medium text-lg text-gray-900">Highlight Stats</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+            {highlightStats.map(stat => (
+              <div
+                key={stat.id}
+                className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2"
+              >
+                <input
+                  value={stat.number}
+                  onChange={e => updateHighlightStat(stat.id, 'number', e.target.value)}
+                  placeholder="Stat number"
+                  className="w-full text-xl md:text-2xl font-bold border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                />
+                <input
+                  value={stat.label}
+                  onChange={e => updateHighlightStat(stat.id, 'label', e.target.value)}
+                  placeholder="Stat label"
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* SAVE BAR */}
+      {/* MOBILE SAVE BAR */}
       {dirty && (
-        <div className="  bg-white border-t p-4 flex justify-end">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50 md:hidden">
           <button
             onClick={handleSave}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white"
+            disabled={uploadingImages.size > 0}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
-            <Save size={18} /> Save Changes
+            {uploadingImages.size > 0 ? (
+              <>
+                <Loader2 className="animate-spin" size={18} />
+                Uploading ({uploadingImages.size})...
+              </>
+            ) : (
+              <>
+                <Save size={18} />
+                Save Changes
+              </>
+            )}
           </button>
+        </div>
+      )}
+
+      {/* DESKTOP SAVE BAR */}
+      {dirty && (
+        <div className="hidden md:block fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50">
+          <div className="max-w-7xl mx-auto flex justify-end">
+            <button
+              onClick={handleSave}
+              disabled={uploadingImages.size > 0}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {uploadingImages.size > 0 ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} />
+                  Uploading ({uploadingImages.size})...
+                </>
+              ) : (
+                <>
+                  <Save size={18} /> Save Changes to Database
+                </>
+              )}
+            </button>
+          </div>
         </div>
       )}
     </div>

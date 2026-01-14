@@ -2,14 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Newspaper, 
-  Image, 
-  Eye, 
-  TrendingUp, 
-  Calendar,
+  Image,
   Activity,
   Layout,
-  Target,
-  DollarSign,
   AlertCircle,
   RefreshCw
 } from 'lucide-react';
