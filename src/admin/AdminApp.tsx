@@ -13,7 +13,6 @@ import News from "./pages/News";
 import Campaigns from "./pages/Campaigns";
 import Team from "./pages/TeamVolunteers";
 import Settings from "./pages/Settings";
-import _Uploads from "./pages/Uploads";
 import _Users from "./pages/Users";
 
 const AdminApp: React.FC = () => {

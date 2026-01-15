@@ -6,7 +6,11 @@ import {
   Activity,
   Layout,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+   HeartHandshake,
+  Layers,
+  FolderKanban,
+  Video
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -273,35 +277,38 @@ const Dashboard: React.FC = () => {
         <div className="bg-white rounded-xl border p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-4">
-            <a
-              href="/admin/news"
-              className="flex flex-col items-center justify-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Newspaper className="h-8 w-8 text-blue-600 mb-2" />
-              <span className="text-sm font-medium">Add News</span>
-            </a>
-            <a
-              href="/admin/uploads"
-              className="flex flex-col items-center justify-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Image className="h-8 w-8 text-green-600 mb-2" />
-              <span className="text-sm font-medium">Upload Media</span>
-            </a>
-            <a
-              href="/admin/sections"
-              className="flex flex-col items-center justify-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Layout className="h-8 w-8 text-purple-600 mb-2" />
-              <span className="text-sm font-medium">Edit Sections</span>
-            </a>
-            <a
-              href="/admin/users"
-              className="flex flex-col items-center justify-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Users className="h-8 w-8 text-orange-600 mb-2" />
-              <span className="text-sm font-medium">Manage Users</span>
-            </a>
-          </div>
+  <a
+    href="/admin/donations"
+    className="flex flex-col items-center justify-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+  >
+    <HeartHandshake className="h-8 w-8 text-red-600 mb-2" />
+    <span className="text-sm font-medium">Donations</span>
+  </a>
+
+  <a
+    href="/admin/sections"
+    className="flex flex-col items-center justify-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+  >
+    <Layers className="h-8 w-8 text-blue-600 mb-2" />
+    <span className="text-sm font-medium">Section Manager</span>
+  </a>
+
+  <a
+    href="/admin/programs"
+    className="flex flex-col items-center justify-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+  >
+    <FolderKanban className="h-8 w-8 text-green-600 mb-2" />
+    <span className="text-sm font-medium">Programs & Projects</span>
+  </a>
+
+  <a
+    href="/admin/campaigns"
+    className="flex flex-col items-center justify-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+  >
+    <Video className="h-8 w-8 text-purple-600 mb-2" />
+    <span className="text-sm font-medium">Campaigns & Stories</span>
+  </a>
+</div>
 
           {/* Database Status */}
           <div className="mt-8 pt-6 border-t">
