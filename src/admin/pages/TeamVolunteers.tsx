@@ -1,274 +1,319 @@
-import {useState } from 'react';
-import { 
-  Save, 
-  Edit, 
-  Trash2, 
+import { useEffect, useState } from 'react';
+import {
+  Save,
+  Trash2,
+  Loader2,
   Upload,
-  Facebook,
-  Twitter,
-  Linkedin,
   UserPlus
 } from 'lucide-react';
 
-const TeamVolunteers = () => {
-  const [teamMembers, setTeamMembers] = useState([
-    {
-      id: 1,
-      name: "Dr. Emmanuel Ayah",
-      role: "Founder & Executive Director",
-      image: "https://via.placeholder.com/150x150",
-      facebook: "#",
-      twitter: "#",
-      linkedin: "#",
-      enabled: true
-    },
-    // Add more members...
-  ]);
+/* ================= TYPES ================= */
 
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    role: '',
-    image: '',
-    facebook: '',
-    twitter: '',
-    linkedin: ''
+type MemberType = 'team' | 'volunteer';
+
+interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  image: string;
+  enabled: boolean;
+  type: MemberType;
+  socials: {
+    facebook?: string;
+    twitter?: string;
+    linkedin?: string;
+  };
+}
+
+interface TeamContent {
+  title: string;
+  subtitle: string;
+  members: TeamMember[];
+}
+
+/* ================= UPLOAD ================= */
+
+const uploadImage = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('folder', 'sections/team');
+
+  const res = await fetch(
+    'http://localhost:5000/api/dashboard/upload/single',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+      },
+      body: formData
+    }
+  );
+
+  if (!res.ok) throw new Error('Upload failed');
+  return res.json(); // { url }
+};
+
+/* ================= COMPONENT ================= */
+
+export default function TeamVolunteers() {
+  const [content, setContent] = useState<TeamContent>({
+    title: '',
+    subtitle: '',
+    members: []
   });
 
-  const handleAddMember = () => {
-    const newMember = {
-      id: teamMembers.length + 1,
-      ...formData,
-      enabled: true
+  const [loading, setLoading] = useState(true);
+  const [dirty, setDirty] = useState(false);
+
+  /* ================= FETCH ================= */
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await fetch(
+        'http://localhost:5000/api/sections/team'
+      );
+      const data = await res.json();
+      if (data?.content) setContent(data.content);
+      setLoading(false);
     };
-    setTeamMembers([...teamMembers, newMember]);
-    setShowForm(false);
-    setFormData({
-      name: '',
-      role: '',
-      image: '',
-      facebook: '',
-      twitter: '',
-      linkedin: ''
-    });
+    load();
+  }, []);
+
+  /* ================= HELPERS ================= */
+
+  const updateField = (key: keyof TeamContent, value: string) => {
+    setContent(prev => ({ ...prev, [key]: value }));
+    setDirty(true);
   };
 
-  const deleteMember = (id: number) => {
-    setTeamMembers(teamMembers.filter(member => member.id !== id));
+  const addMember = () => {
+    setContent(prev => ({
+      ...prev,
+      members: [
+        {
+          id: crypto.randomUUID(),
+          name: '',
+          role: '',
+          image: '',
+          enabled: true,
+          type: 'team',
+          socials: {}
+        },
+        ...prev.members
+      ]
+    }));
+    setDirty(true);
   };
+
+  const updateMember = (
+    id: string,
+    key: keyof TeamMember,
+    value: any
+  ) => {
+    setContent(prev => ({
+      ...prev,
+      members: prev.members.map(m =>
+        m.id === id ? { ...m, [key]: value } : m
+      )
+    }));
+    setDirty(true);
+  };
+
+  const updateSocial = (
+    id: string,
+    key: 'facebook' | 'twitter' | 'linkedin',
+    value: string
+  ) => {
+    setContent(prev => ({
+      ...prev,
+      members: prev.members.map(m =>
+        m.id === id
+          ? { ...m, socials: { ...m.socials, [key]: value } }
+          : m
+      )
+    }));
+    setDirty(true);
+  };
+
+  const removeMember = (id: string) => {
+    setContent(prev => ({
+      ...prev,
+      members: prev.members.filter(m => m.id !== id)
+    }));
+    setDirty(true);
+  };
+
+  /* ================= SAVE ================= */
+
+  const save = async () => {
+    await fetch('http://localhost:5000/api/sections/team', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+      },
+      body: JSON.stringify({ content })
+    });
+    setDirty(false);
+    alert('Team section saved');
+  };
+
+  /* ================= UI ================= */
+
+  if (loading) {
+    return (
+      <div className="h-64 flex items-center justify-center">
+        <Loader2 className="animate-spin" size={32} />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Team & Volunteers</h1>
-          <p className="text-gray-600">Manage team members and volunteers information</p>
-        </div>
-        <div className="flex space-x-3">
-          <button 
-            onClick={() => setShowForm(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center space-x-2"
-          >
-            <UserPlus size={18} />
-            <span>Add Team Member</span>
-          </button>
-          <button className="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center space-x-2">
-            <Save size={18} />
-            <span>Save Changes</span>
-          </button>
-        </div>
+    <div className="max-w-7xl mx-auto px-4 pb-32 space-y-10">
+      <h1 className="text-3xl font-bold">Team & Volunteers</h1>
+
+      {/* SECTION HEADER */}
+      <div className="bg-white p-6 rounded-xl shadow space-y-4">
+        <input
+          className="w-full border rounded px-4 py-2"
+          placeholder="Section Title"
+          value={content.title}
+          onChange={e => updateField('title', e.target.value)}
+        />
+        <textarea
+          className="w-full border rounded px-4 py-2"
+          placeholder="Subtitle"
+          rows={3}
+          value={content.subtitle}
+          onChange={e => updateField('subtitle', e.target.value)}
+        />
       </div>
 
-      {/* Team Members Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {teamMembers.map((member) => (
-          <div key={member.id} className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow">
-            <div className="p-6">
-              <div className="flex items-start space-x-4">
-                <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                  {member.image ? (
-                    <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-gray-400">Image</span>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-lg">{member.name}</h3>
-                      <p className="text-gray-600">{member.role}</p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button className="p-1 text-gray-500 hover:text-blue-600">
-                        <Edit size={18} />
-                      </button>
-                      <button 
-                        onClick={() => deleteMember(member.id)}
-                        className="p-1 text-gray-500 hover:text-red-600"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 space-y-3">
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        placeholder="Facebook URL"
-                        value={member.facebook}
-                        onChange={(_e) => console.log('Update facebook')}
-                        className="flex-1 px-3 py-1 text-sm border rounded"
-                      />
-                      <Facebook size={18} className="text-blue-600" />
-                    </div>
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        placeholder="Twitter URL"
-                        value={member.twitter}
-                        onChange={(_e) => console.log('Update twitter')}
-                        className="flex-1 px-3 py-1 text-sm border rounded"
-                      />
-                      <Twitter size={18} className="text-blue-400" />
-                    </div>
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        placeholder="LinkedIn URL"
-                        value={member.linkedin}
-                        onChange={(_e) => console.log('Update linkedin')}
-                        className="flex-1 px-3 py-1 text-sm border rounded"
-                      />
-                      <Linkedin size={18} className="text-blue-700" />
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="text-sm text-gray-500">Status:</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={member.enabled}
-                        onChange={() => console.log('Toggle enabled')}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                    </label>
-                  </div>
-                </div>
-              </div>
+      {/* MEMBERS */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {content.members.map(member => (
+          <div
+            key={member.id}
+            className="bg-white rounded-xl shadow p-6 space-y-4"
+          >
+            {member.image && (
+              <img
+                src={member.image}
+                className="h-40 w-full object-cover rounded"
+              />
+            )}
+
+            <input
+              type="file"
+              accept="image/*"
+              onChange={async e => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const res = await uploadImage(file);
+                updateMember(member.id, 'image', res.url);
+              }}
+            />
+
+            <input
+              className="w-full border rounded px-3 py-2"
+              placeholder="Name"
+              value={member.name}
+              onChange={e =>
+                updateMember(member.id, 'name', e.target.value)
+              }
+            />
+
+            <input
+              className="w-full border rounded px-3 py-2"
+              placeholder="Role"
+              value={member.role}
+              onChange={e =>
+                updateMember(member.id, 'role', e.target.value)
+              }
+            />
+
+            <select
+              className="w-full border rounded px-3 py-2"
+              value={member.type}
+              onChange={e =>
+                updateMember(member.id, 'type', e.target.value)
+              }
+            >
+              <option value="team">Team</option>
+              <option value="volunteer">Volunteer</option>
+            </select>
+
+            <div className="space-y-2">
+              <input
+                className="w-full border rounded px-3 py-2"
+                placeholder="Facebook"
+                value={member.socials.facebook || ''}
+                onChange={e =>
+                  updateSocial(member.id, 'facebook', e.target.value)
+                }
+              />
+              <input
+                className="w-full border rounded px-3 py-2"
+                placeholder="Twitter"
+                value={member.socials.twitter || ''}
+                onChange={e =>
+                  updateSocial(member.id, 'twitter', e.target.value)
+                }
+              />
+              <input
+                className="w-full border rounded px-3 py-2"
+                placeholder="LinkedIn"
+                value={member.socials.linkedin || ''}
+                onChange={e =>
+                  updateSocial(member.id, 'linkedin', e.target.value)
+                }
+              />
+            </div>
+
+            <div className="flex justify-between items-center">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={member.enabled}
+                  onChange={() =>
+                    updateMember(
+                      member.id,
+                      'enabled',
+                      !member.enabled
+                    )
+                  }
+                />
+                Enabled
+              </label>
+
+              <button
+                onClick={() => removeMember(member.id)}
+                className="text-red-500"
+              >
+                <Trash2 size={18} />
+              </button>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Add Member Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-bold">Add New Team Member</h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    placeholder="Full Name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Role/Position
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.role}
-                    onChange={(e) => setFormData({...formData, role: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    placeholder="e.g., Executive Director"
-                  />
-                </div>
-              </div>
+      <button
+        onClick={addMember}
+        className="flex items-center gap-2 text-blue-600 font-semibold"
+      >
+        <UserPlus size={18} /> Add Member
+      </button>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Profile Image
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-2">Upload profile picture</p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setFormData({...formData, image: e.target.value})}
-                    className="hidden"
-                    id="profile-upload"
-                  />
-                  <label
-                    htmlFor="profile-upload"
-                    className="inline-flex items-center px-4 py-2 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200"
-                  >
-                    <Upload size={18} className="mr-2" />
-                    Select Image
-                  </label>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="font-medium">Social Links</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <input
-                    type="url"
-                    placeholder="Facebook URL"
-                    value={formData.facebook}
-                    onChange={(e) => setFormData({...formData, facebook: e.target.value})}
-                    className="px-4 py-2 border rounded-lg"
-                  />
-                  <input
-                    type="url"
-                    placeholder="Twitter URL"
-                    value={formData.twitter}
-                    onChange={(e) => setFormData({...formData, twitter: e.target.value})}
-                    className="px-4 py-2 border rounded-lg"
-                  />
-                  <input
-                    type="url"
-                    placeholder="LinkedIn URL"
-                    value={formData.linkedin}
-                    onChange={(e) => setFormData({...formData, linkedin: e.target.value})}
-                    className="px-4 py-2 border rounded-lg"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAddMember}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Add Member
-                </button>
-              </div>
-            </div>
-          </div>
+      {dirty && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-end">
+          <button
+            onClick={save}
+            className="bg-blue-600 text-white px-6 py-3 rounded-xl flex items-center gap-2"
+          >
+            <Save size={18} /> Save Changes
+          </button>
         </div>
       )}
     </div>
   );
-};
-
-export default TeamVolunteers;
+}

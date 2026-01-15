@@ -11,8 +11,10 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FolderKanban
 } from 'lucide-react';
+
 import logoimg from '../../assets/images/logo/AyahFoundation.jpeg';
 
 const Sidebar: React.FC = () => {
@@ -25,8 +27,9 @@ const Sidebar: React.FC = () => {
     { path: '/admin/donations', icon: <HeartHandshake size={20} />, label: 'Donations' },
     { path: '/admin/hero', icon: <Home size={20} />, label: 'Wall Frame & Tagline' },
     { path: '/admin/sections', icon: <Layers size={20} />, label: 'Section Manager' },
-    { path: '/admin/news', icon: <Newspaper size={20} />, label: 'News & Programs' },
-    { path: '/admin/campaigns', icon: <Video size={20} />, label: 'Campaigns' },
+    { path: '/admin/Programs', icon: <FolderKanban size={20} />, label: 'Programs & Projects' },
+    { path: '/admin/news', icon: <Newspaper size={20} />, label: 'News & Updates' },
+    { path: '/admin/campaigns', icon: <Video size={20} />, label: 'Campaigns & Stories' },
     { path: '/admin/team', icon: <Users size={20} />, label: 'Team & Volunteers' }
   ];
 

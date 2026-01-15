@@ -7,6 +7,8 @@ import Dashboard from "./pages/Dashboard";
 import Donations from "./pages/Donations";
 import Hero from "./pages/HeroSection";
 import Sections from "./pages/Sections";
+
+import Programs from "./pages/Programs";
 import News from "./pages/News";
 import Campaigns from "./pages/Campaigns";
 import Team from "./pages/TeamVolunteers";
@@ -59,6 +61,7 @@ const AdminApp: React.FC = () => {
     {/* New / Updated */}
     <Route path="donations" element={<Donations />} />
     <Route path="hero" element={<Hero />} />
+    <Route path="Programs" element={<Programs />} />
     <Route path="news" element={<News />} />
     <Route path="campaigns" element={<Campaigns />} />
     <Route path="team" element={<Team />} />

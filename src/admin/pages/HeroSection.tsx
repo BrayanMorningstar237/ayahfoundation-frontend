@@ -96,11 +96,11 @@ const HeroSection = () => {
   };
 
   if (!heroData) {
-    return <p className="p-4">Loading hero section…</p>;
+    return <p className="p-4">Loading Wall Frame Settings…</p>;
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 px-4">
 
       {toast && <Toast message={toast.message} type={toast.type} />}
 
