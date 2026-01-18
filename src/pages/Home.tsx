@@ -7,6 +7,12 @@ import type { PublicHero, WallImage } from '../services/hero.public.api';
 import { HeroPublicAPI } from '../services/hero.public.api';
 import { SectionsPublicAPI } from "../services/sections.public.api";
 import { Link } from "react-router-dom";
+import {
+  Users,
+  Home as HomeIcon,
+  HandHeart,
+} from "lucide-react";
+
 
 
 
@@ -157,6 +163,11 @@ const Home = () => {
   const [aboutData, setAboutData] = useState<any>(null);
   const [programs, setPrograms] = useState<any[]>([]);
   const [newsItems, setNewsItems] = useState<any[]>([]);
+  const [campaignsSection, setCampaignsSection] = useState<any>(null);
+  const campaignVideo = campaignsSection?.content?.video;
+
+const [successStories, setSuccessStories] = useState<any[]>([]);
+
   // =============================
   // UI STATE
   // =============================
@@ -244,12 +255,29 @@ useEffect(() => {
     const stats = aboutSection?.content?.stats ?? [];
 
     setImpactStats(
-      stats.map((stat: any) => ({
-        number: stat.number,
-        label: stat.label,
-        icon: Globe, // UI stays exactly the same
-      }))
-    );
+  stats.map((stat: any) => {
+    const label = stat.label.toLowerCase();
+
+    let icon = Globe; // fallback
+
+    if (label.includes("life") || label.includes("lives")) {
+      icon = Heart; // Lives Touched
+    } else if (label.includes("famil")) {
+      icon = HomeIcon; //  Families Supported
+    } else if (label.includes("community")) {
+      icon = HandHeart; // Community Projects
+    } else if (label.includes("volunteer")) {
+      icon = Users; // 👥 Volunteers Active
+    }
+
+    return {
+      number: stat.number,
+      label: stat.label,
+      icon,
+    };
+  })
+);
+
   } catch (error) {
     console.error("Failed to load stats", error);
   }
@@ -339,7 +367,26 @@ const loadNews = async () => {
     }
   };
 
-  
+  const loadCampaigns = async () => {
+  try {
+    const res = await fetch(
+      "http://localhost:5000/api/public/sections/campaigns"
+    );
+
+    if (!res.ok) throw new Error("Failed to load campaigns");
+
+    const section = await res.json();
+
+    console.log("🟣 CAMPAIGNS SECTION:", section);
+
+    setCampaignsSection(section);
+    setSuccessStories(section?.content?.successStories ?? []);
+  } catch (err) {
+    console.error("Failed to load campaigns", err);
+  }
+};
+loadCampaigns();
+
 
 
 loadNews();
@@ -355,60 +402,6 @@ loadAbout();
 const featuredNews = newsItems.filter(n => n.featured);
 const regularNews = newsItems.filter(n => !n.featured);
 
-
-
-
-  const causes = [
-    {
-      title: "They are Waiting For Warm Help.",
-      raised: 25270,
-      goal: 30000,
-      image: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop",
-      category: "Education"
-    },
-    {
-      title: "Changing Lives One Meal at a Time.",
-      raised: 14730,
-      goal: 20000,
-      image: "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&h=600&fit=crop",
-      category: "Food Security"
-    },
-    {
-      title: "Let's Build Hope in Every Community.",
-      raised: 18500,
-      goal: 25000,
-      image: "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&h=600&fit=crop",
-      category: "Healthcare"
-    }
-  ];
-
-  
-
-  
-
-  const successStories = [
-    {
-      name: "Amina's Story",
-      role: "Scholarship Recipient",
-      story: "From struggling to afford school supplies to becoming the top student in her class, Amina's journey shows the power of educational support.",
-      image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&h=300&fit=crop",
-      achievement: "Now studying Medicine"
-    },
-    {
-      name: "Douala Village Project",
-      role: "Community Impact",
-      story: "Installation of a clean water system transformed daily life for 800 families, reducing disease by 70% and freeing up time for education.",
-      image: "https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=300&h=300&fit=crop",
-      achievement: "800+ families impacted"
-    },
-    {
-      name: "Youth Skills Program",
-      role: "Vocational Training",
-      story: "120 young adults gained marketable skills in carpentry, tailoring, and technology, with 85% now earning sustainable incomes.",
-      image: "https://images.unsplash.com/photo-1529390079861-591de354faf5?w=300&h=300&fit=crop",
-      achievement: "85% employment rate"
-    }
-  ];
 const teamMembers = [
     {
       name: "Dr. Emmanuel Ayah",
@@ -906,51 +899,92 @@ const teamMembers = [
 
 
       {/* Video Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-blue-800 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-64 h-64 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-        </div>
+{campaignVideo && (
+  <motion.section
+    id="campaigns"
+    initial={{ opacity: 0, y: 60 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, amount: 0.3 }}
+    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+    className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-blue-800 relative overflow-hidden"
+  >
+    {/* Background blobs */}
+    <div className="absolute inset-0 opacity-10">
+      <motion.div
+        animate={{ y: [0, -20, 0] }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-20 left-20 w-64 h-64 bg-white rounded-full blur-3xl"
+      />
+      <motion.div
+        animate={{ y: [0, 30, 0] }}
+        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl"
+      />
+    </div>
 
-        <div className="max-w-7xl mx-auto relative">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="text-white space-y-6">
-              <span className="text-sm font-semibold text-blue-200 tracking-widest uppercase">
-                See Our Impact
-              </span>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-tight">
-                Watch How We're Changing Lives
-              </h2>
-              <p className="text-blue-100 text-lg leading-relaxed">
-                Take a journey through our communities and witness the transformative power of collective action. Every story is a testament to resilience and hope.
-              </p>
-              <button 
-                onClick={() => setVideoModal(true)}
-                className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-4 rounded-full font-bold text-lg inline-flex items-center shadow-xl transition-all duration-300 transform hover:scale-105"
-              >
-                <Play className="w-6 h-6 mr-3 fill-blue-600" />
-                Watch Full Story
-              </button>
-            </div>
+    <div className="max-w-7xl mx-auto relative">
+      <div className="grid lg:grid-cols-2 gap-12 items-center">
+        {/* Text */}
+        <motion.div
+          initial={{ opacity: 0, x: -40 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="text-white space-y-6"
+        >
+          <span className="text-sm font-semibold text-blue-200 tracking-widest uppercase">
+            {campaignVideo.eyebrow}
+          </span>
 
-            <div 
-              className="relative rounded-3xl overflow-hidden shadow-2xl cursor-pointer group"
-              onClick={() => setVideoModal(true)}
+          <h2 className="text-4xl sm:text-5xl font-bold leading-tight">
+            {campaignVideo.title}
+          </h2>
+
+          <p className="text-blue-100 text-lg leading-relaxed">
+            {campaignVideo.description}
+          </p>
+
+          <button
+            onClick={() => setVideoModal(true)}
+            className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-4 rounded-full font-bold text-lg inline-flex items-center shadow-xl transition-transform duration-300 hover:scale-105"
+          >
+            <Play className="w-6 h-6 mr-3 fill-blue-600" />
+            {campaignVideo.ctaText}
+          </button>
+        </motion.div>
+
+        {/* Video Card */}
+        <motion.div
+          initial={{ opacity: 0, x: 40 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          whileHover={{ scale: 1.03 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="relative rounded-3xl overflow-hidden shadow-2xl cursor-pointer group"
+          onClick={() => setVideoModal(true)}
+        >
+          <img
+            src={campaignVideo.thumbnail}
+            alt={campaignVideo.title}
+            className="w-full h-96 object-cover"
+          />
+
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-all duration-300 flex items-center justify-center">
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="w-20 h-20 bg-white rounded-full flex items-center justify-center"
             >
-              <img 
-                src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop"
-                alt="Video thumbnail"
-                className="w-full h-96 object-cover"
-              />
-              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-all duration-300 flex items-center justify-center">
-                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300">
-                  <Play className="w-10 h-10 text-blue-600 fill-blue-600 ml-1" />
-                </div>
-              </div>
-            </div>
+              <Play className="w-10 h-10 text-blue-600 fill-blue-600 ml-1" />
+            </motion.div>
           </div>
-        </div>
-      </section>
+        </motion.div>
+      </div>
+    </div>
+  </motion.section>
+)}
+
+
 
       {/* Success Stories */}
       <section 
@@ -968,114 +1002,90 @@ const teamMembers = [
               Achievements & Success Stories
             </h2>
             <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
-              These stories represent the heart of our work—real people, real change, real hope for a better tomorrow.
+              These stories represent the heart of our work, real people, real change, real hope for a better tomorrow.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {successStories.map((story, index) => (
-              <div
-                key={index}
-                className={`bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-700 transform hover:-translate-y-3 ${
-                  isVisible['animate-success'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
-                }`}
-                style={{ transitionDelay: `${index * 200}ms` }}
-              >
-                <div className="relative h-64 overflow-hidden">
-                  <img 
-                    src={story.image} 
-                    alt={story.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold">
-                    {story.achievement}
-                  </div>
-                </div>
-                <div className="p-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{story.name}</h3>
-                  <p className="text-blue-600 font-semibold mb-4">{story.role}</p>
-                  <p className="text-gray-600 leading-relaxed">{story.story}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+  {successStories.map((story, index) => (
+    <Link
+      key={story.id}
+      to={`/campaigns/${story.id}`}
+      id={`animate-success-${index}`}
+      className={`bg-white rounded-3xl overflow-hidden shadow-lg
+                  hover:shadow-2xl transition-all duration-700
+                  transform hover:-translate-y-3
+                  ${isVisible['animate-success']
+                    ? 'opacity-100 translate-y-0'
+                    : 'opacity-0 translate-y-20'}`}
+      style={{ transitionDelay: `${index * 200}ms` }}
+    >
+      {/* Image */}
+      <div className="relative h-64 overflow-hidden group">
+        <img
+          src={story.mainImage}
+          alt={story.title}
+          className="w-full h-full object-cover
+                     transform group-hover:scale-110
+                     transition-transform duration-700"
+        />
 
-      {/* Featured Campaigns */}
-      <section 
-        id="campaigns"
-        className="py-20 px-4 sm:px-6 lg:px-8 bg-white"
+        {/* Optional badge */}
+        {story.badge && (
+          <div className="absolute top-4 left-4 bg-white px-4 py-2
+                          rounded-full text-sm font-bold text-gray-900">
+            {story.badge}
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-6">
+        <h3 className="text-xl font-bold text-gray-900 mb-3">
+          {story.title}
+        </h3>
+
+        {story.description && (
+          <p className="text-gray-600 leading-relaxed mb-6 line-clamp-3">
+            {story.description}
+          </p>
+        )}
+
+        {/* CTA BUTTON (NO PERCENTAGE) */}
+        <button
+          className="w-full bg-blue-600 hover:bg-blue-700
+                     text-white py-3 rounded-full
+                     font-bold transition-all duration-300
+                     transform hover:scale-105"
+        >
+          Read Full Story
+        </button>
+      </div>
+    </Link>
+  ))}
+</div>
+
+{/* CTA */}
+    <div
+      className={`text-center mt-12 transition-all duration-700 delay-500
+                  ${isVisible['animate-news']
+                    ? 'opacity-100 translate-y-0'
+                    : 'opacity-0 translate-y-8'}`}
+    >
+      <Link
+        to="/campaigns"
+        className="inline-flex items-center px-6 py-3 rounded-full
+                   bg-blue-600 text-white font-semibold
+                   hover:bg-blue-600 transition-colors"
       >
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <span className="text-sm font-semibold text-yellow-600 tracking-widest uppercase mb-4 block">
-              Be a Helping Hand
-            </span>
-            <h2 
-              id="animate-campaigns"
-              className={`text-4xl sm:text-5xl font-bold text-gray-900 transition-all duration-1000 ${
-                isVisible['animate-campaigns'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-              }`}
-            >
-              Featured Campaigns
-            </h2>
-            <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
-              Join us in making a difference. Every contribution brings us closer to our goals and changes lives in meaningful ways.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {causes.map((cause, index) => {
-              const percentage = (cause.raised / cause.goal) * 100;
-              return (
-                <div
-                  key={index}
-                  id={`animate-cause-${index}`}
-                  className={`bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-700 transform hover:-translate-y-3 ${
-                    isVisible[`animate-cause-${index}`] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
-                  }`}
-                  style={{ transitionDelay: `${index * 200}ms` }}
-                >
-                  <div className="relative h-64 overflow-hidden group">
-                    <img 
-                      src={cause.image} 
-                      alt={cause.title}
-                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-                    />
-                    <div className="absolute top-4 left-4 bg-white px-4 py-2 rounded-full text-sm font-bold text-gray-900">
-                      {cause.category}
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4">{cause.title}</h3>
-                    
-                    <div className="mb-4">
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="font-semibold text-gray-900">${cause.raised.toLocaleString()}</span>
-                        <span className="text-gray-600">raised of ${cause.goal.toLocaleString()}</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-yellow-400 h-2 rounded-full transition-all duration-1000"
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
-                      <div className="text-center mt-2">
-                        <span className="text-3xl font-bold text-gray-900">{Math.round(percentage)}%</span>
-                      </div>
-                    </div>
-
-                    <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105">
-                      Donate Now
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        All Success Stories 
+        <i className="ri-arrow-right-wide-fill"></i>
+      </Link>
+    </div>
         </div>
       </section>
+
+      
 {/* Team Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-7xl mx-auto">
@@ -1165,11 +1175,21 @@ const teamMembers = [
               <X className="w-8 h-8" />
             </button>
             <div className="bg-black rounded-2xl overflow-hidden aspect-video">
-              <img 
-                src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1200&h=675&fit=crop"
-                alt="Video placeholder"
-                className="w-full h-full object-cover"
-              />
+              {campaignVideo?.videoUrl ? (
+  <iframe
+    src={campaignVideo.videoUrl}
+    className="w-full h-full"
+    allow="autoplay; fullscreen"
+    allowFullScreen
+  />
+) : (
+  <img
+    src={campaignVideo?.thumbnail}
+    alt={campaignVideo?.title}
+    className="w-full h-full object-cover"
+  />
+)}
+
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
                   <Play className="w-10 h-10 text-white fill-white ml-1" />
