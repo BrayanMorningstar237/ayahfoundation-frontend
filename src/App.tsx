@@ -6,7 +6,7 @@ import Programs from "./pages/Programs";
 import AdminApp from "./admin/AdminApp";
 import AdminLogin from "./admin/pages/AdminLogin";
 import Footer from "./components/Footer";
-
+import News from "./pages/News";
 function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
@@ -48,13 +48,16 @@ function App() {
       />
 
       <Route
-        path="/programs"
-        element={
-          <PublicLayout>
-            <Programs />
-          </PublicLayout>
-        }
-      />
+  path="/programs/:id"
+  element={
+    <PublicLayout>
+      <Programs />
+    </PublicLayout>
+  }
+/>
+
+<Route path="/news/:id" element={<PublicLayout><News /></PublicLayout>} />
+
 
       {/* Admin (NO footer) */}
       <Route path="/admin/login" element={<AdminLogin />} />
