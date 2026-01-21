@@ -165,6 +165,7 @@ const Home = () => {
   const [newsItems, setNewsItems] = useState<any[]>([]);
   const [campaignsSection, setCampaignsSection] = useState<any>(null);
   const campaignVideo = campaignsSection?.content?.video;
+  const [teamSection, setTeamSection] = useState<any>(null);
 
 const [successStories, setSuccessStories] = useState<any[]>([]);
 
@@ -385,10 +386,20 @@ const loadNews = async () => {
     console.error("Failed to load campaigns", err);
   }
 };
+const loadTeam = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/api/public/sections/team");
+    if (!res.ok) throw new Error("Failed to load team");
+
+    const section = await res.json();
+    setTeamSection(section?.content);
+  } catch (err) {
+    console.error("Failed to load team", err);
+  }
+};
+loadTeam();
+
 loadCampaigns();
-
-
-
 loadNews();
   loadPrograms();
 loadAbout();
@@ -402,23 +413,8 @@ loadAbout();
 const featuredNews = newsItems.filter(n => n.featured);
 const regularNews = newsItems.filter(n => !n.featured);
 
-const teamMembers = [
-    {
-      name: "Dr. Emmanuel Ayah",
-      role: "Founder & Executive Director",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"
-    },
-    {
-      name: "Grace Mbella",
-      role: "Program Coordinator",
-      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop"
-    },
-    {
-      name: "Jean-Paul Nkeng",
-      role: "Community Outreach Lead",
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop"
-    }
-  ];
+const teamMembers = teamSection?.members ?? [];
+
   
 
  
@@ -1087,54 +1083,112 @@ const teamMembers = [
 
       
 {/* Team Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <span className="text-xs sm:text-sm font-semibold text-yellow-600 tracking-widest uppercase mb-4 block animate-bounce-slow">
-              Meet Our Team
-            </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900">
-              The People Behind the Mission
-            </h2>
-            <p className="text-gray-600 mt-4 max-w-2xl mx-auto text-sm sm:text-base">
-              Dedicated professionals working tirelessly to create positive change in communities across Cameroon.
-            </p>
-          </div>
+{teamMembers.length > 0 && (
+  <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
+    <div className="max-w-7xl mx-auto">
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {teamMembers.map((member, index) => (
-              <div
-                key={index}
-                id={`animate-team-${index}`}
-                className={`group cursor-pointer transition-all duration-700 ${
-                  isVisible[`animate-team-${index}`] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
-                }`}
-                style={{ transitionDelay: `${index * 200}ms` }}
-              >
-                <div className="relative overflow-hidden rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500">
-                  <img 
-                    src={member.image}
-                    alt={member.name}
-                    className="w-full h-96 object-cover transform group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-                    <div className="flex gap-4 justify-center">
-                      <Facebook className="w-6 h-6 hover:scale-125 transition-transform cursor-pointer" />
-                      <Twitter className="w-6 h-6 hover:scale-125 transition-transform cursor-pointer" />
-                      <Linkedin className="w-6 h-6 hover:scale-125 transition-transform cursor-pointer" />
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 text-center">
-                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{member.name}</h3>
-                  <p className="text-gray-600">{member.role}</p>
+      {/* Header */}
+      <div className="text-center mb-16">
+        <span className="text-xs sm:text-sm font-semibold text-yellow-600 tracking-widest uppercase mb-4 block">
+          {teamSection?.title}
+        </span>
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900">
+          {teamSection?.subtitle}
+        </h2>
+      </div>
+
+      {/* Grid */}
+      <div className="grid md:grid-cols-3 gap-8">
+        {teamMembers
+          .filter((m: any) => m.enabled)
+          .map((member: any, index: number) => (
+            <motion.div
+              key={member.id}
+              initial={{ opacity: 0, scale: 0.85, rotateX: -15 }}
+              whileInView={{ opacity: 1, scale: 1, rotateX: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{
+                duration: 0.8,
+                delay: index * 0.15,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="group cursor-pointer"
+              style={{ transformStyle: "preserve-3d" }}
+            >
+              <div className="relative w-full aspect-[3/4] overflow-hidden rounded-3xl">
+
+                <img
+  src={member.image}
+  alt={member.name}
+  className="absolute inset-0 w-full h-full
+             object-cover
+             transition-transform duration-700
+             group-hover:scale-110"
+/>
+
+
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                {/* Socials */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white
+                                transform translate-y-full group-hover:translate-y-0
+                                transition-transform duration-500">
+                  <div className="flex gap-4 justify-center">
+  {member.socials?.facebook && (
+    <a
+      href={member.socials.facebook}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Facebook"
+      className="hover:scale-125 transition-transform"
+    >
+      <Facebook className="w-6 h-6 cursor-pointer text-white" />
+    </a>
+  )}
+
+  {member.socials?.twitter && (
+    <a
+      href={member.socials.twitter}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Twitter"
+      className="hover:scale-125 transition-transform"
+    >
+      <Twitter className="w-6 h-6 cursor-pointer text-white" />
+    </a>
+  )}
+
+  {member.socials?.linkedin && (
+    <a
+      href={member.socials.linkedin}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="LinkedIn"
+      className="hover:scale-125 transition-transform"
+    >
+      <Linkedin className="w-6 h-6 cursor-pointer text-white" />
+    </a>
+  )}
+</div>
+
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
+              {/* Name */}
+              <div className="mt-5 text-center">
+                <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  {member.name}
+                </h3>
+                <p className="text-gray-600">{member.role}</p>
+              </div>
+            </motion.div>
+          ))}
+      </div>
+    </div>
+  </section>
+)}
+
       {/* Call to Action */}
       <section className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900"></div>
