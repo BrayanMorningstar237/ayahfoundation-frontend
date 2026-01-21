@@ -1,4 +1,4 @@
-import { 
+import {
   ArrowRight,
   Phone,
   Mail,
@@ -9,57 +9,100 @@ import {
   Instagram,
   Linkedin,
   Youtube
-} from 'lucide-react';
+} from "lucide-react";
 import logoimg from "../assets/images/logo/AyahFoundation.jpeg";
+import { useSiteSettings } from "../services/useSiteSettings";
+
 const Footer = () => {
+  const settings = useSiteSettings();
+
+  if (!settings) return null;
+
+  const {
+    siteName,
+    address,
+    email,
+    phone,
+    website,
+    socialLinks = {}
+  } = settings;
+
+  const socials = [
+    { name: "Facebook", icon: Facebook, url: socialLinks.facebook },
+    { name: "Twitter", icon: Twitter, url: socialLinks.twitter },
+    { name: "Instagram", icon: Instagram, url: socialLinks.instagram },
+    { name: "LinkedIn", icon: Linkedin, url: socialLinks.linkedin },
+    { name: "YouTube", icon: Youtube, url: socialLinks.youtube }
+  ];
+
+  const placeholder = (text: string) => (
+    <span className="italic text-gray-500">
+      {text} (add in site settings)
+    </span>
+  );
+
   return (
-    <footer
-      id="contact"
-      className="bg-gray-900 text-white py-16 px-4 sm:px-6 lg:px-8"
-    >
+    <footer className="bg-gray-900 text-white py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Main Footer Content */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 mb-12">
-          
-          {/* Brand Column */}
-          <div className="sm:col-span-2 lg:col-span-1">
+
+        {/* MAIN GRID */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+
+          {/* BRAND */}
+          <div>
             <div className="flex items-center mb-6">
-              <img src={logoimg} className="w-10 h-10 rounded text-blue-400 fill-blue-400" />
-              <span className="ml-3 text-2xl font-bold">Ayah Foundation</span>
+              <img src={logoimg} className="w-10 h-10 rounded" />
+              <span className="ml-3 text-2xl font-bold">
+                {siteName || "Ayah Foundation"}
+              </span>
             </div>
+
             <p className="text-gray-400 mb-6 leading-relaxed">
-              Empowering communities through care, compassion, and action. Together we build a better tomorrow.
+              Empowering communities through care, compassion, and action.
             </p>
+
             <div className="flex gap-4">
-              {[Facebook, Twitter, Instagram, Linkedin, Youtube].map((Icon, i) => (
-                <a
-                  key={i}
-                  href="#"
-                  className="w-10 h-10 bg-gray-800 hover:bg-blue-600 rounded-full flex items-center justify-center transition-all duration-300"
-                >
-                  <Icon className="w-5 h-5" />
-                </a>
-              ))}
+              {socials.map(({ name, icon: Icon, url }) =>
+                url ? (
+                  <a
+                    key={name}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-gray-800 hover:bg-blue-600 rounded-full flex items-center justify-center transition"
+                  >
+                    <Icon className="w-5 h-5" />
+                  </a>
+                ) : (
+                  <div
+                    key={name}
+                    title={`Add ${name} link in site settings`}
+                    className="w-10 h-10 bg-gray-800/50 text-gray-500 rounded-full flex items-center justify-center cursor-not-allowed"
+                  >
+                    <Icon className="w-5 h-5" />
+                  </div>
+                )
+              )}
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* QUICK LINKS */}
           <div>
             <h3 className="text-lg font-bold mb-6">Quick Links</h3>
             <ul className="space-y-3">
               {[
-                ['#about', 'About Us'],
-                ['#programs', 'Our Programs'],
-                ['#campaigns', 'Campaigns'],
-                ['#', 'Success Stories'],
-                ['#', 'Get Involved'],
+                ["/about", "About Us"],
+                ["/campaigns", "Campaigns"],
+                ["/news", "News"],
+                ["/campaigns", "Success Stories"],
+                ["/contact", "Contact"]
               ].map(([href, label]) => (
                 <li key={label}>
                   <a
                     href={href}
-                    className="text-gray-400 hover:text-white transition-colors duration-300 inline-flex items-center group"
+                    className="text-gray-400 hover:text-white inline-flex items-center group"
                   >
-                    <ArrowRight className="w-4 h-4 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ArrowRight className="w-4 h-4 mr-2 opacity-0 group-hover:opacity-100 transition" />
                     {label}
                   </a>
                 </li>
@@ -67,62 +110,64 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Contact Info */}
+          {/* CONTACT */}
           <div>
             <h3 className="text-lg font-bold mb-6">Contact Us</h3>
-            <ul className="space-y-4">
-              <li className="flex items-start text-gray-400 hover:text-white">
-                <MapPin className="w-5 h-5 mr-3 mt-1 text-blue-400" />
-                Douala, Littoral Region, Cameroon
+            <ul className="space-y-4 text-gray-400">
+
+              <li className="flex">
+                <MapPin className="w-5 h-5 mr-3 text-blue-400" />
+                {address || placeholder("Address not set")}
               </li>
-              <li className="flex items-center text-gray-400 hover:text-white">
+
+              <li className="flex">
                 <Phone className="w-5 h-5 mr-3 text-blue-400" />
-                +237 6XXXXXXXX
+                {phone || placeholder("Phone number not set")}
               </li>
-              <li className="flex items-center text-gray-400 hover:text-white">
+
+              <li className="flex">
                 <Mail className="w-5 h-5 mr-3 text-blue-400" />
-                info@ayahfoundation.org
+                {email || placeholder("Email not set")}
               </li>
-              <li className="flex items-center text-gray-400 hover:text-white">
+
+              <li className="flex">
                 <Globe className="w-5 h-5 mr-3 text-blue-400" />
-                www.ayahfoundation.org
+                {website || placeholder("Website not set")}
               </li>
+
             </ul>
           </div>
 
-          {/* Newsletter */}
+          {/* NEWSLETTER */}
           <div>
             <h3 className="text-lg font-bold mb-6">Stay Connected</h3>
             <p className="text-gray-400 mb-4">
               Subscribe to get latest updates and inspiring stories
             </p>
-            <div className="space-y-3">
-              <input
-                type="email"
-                placeholder="Your email address"
-                className="w-full px-4 py-3 rounded-full bg-gray-800 text-white border border-gray-700 focus:border-blue-500 outline-none"
-              />
-              <button className="w-full bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-full font-semibold transition-transform hover:scale-105">
-                Subscribe
-              </button>
-            </div>
-            <p className="text-gray-500 text-xs mt-3">
-              We respect your privacy. Unsubscribe anytime.
-            </p>
+
+            <input
+              type="email"
+              placeholder="Your email address"
+              className="w-full px-4 py-3 rounded-full bg-gray-800 border border-gray-700 mb-3"
+            />
+            <button className="w-full bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-full font-semibold transition">
+              Subscribe
+            </button>
           </div>
         </div>
 
-        {/* Bottom Footer */}
-        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-gray-400 text-center md:text-left">
-            © 2026 Ayah Foundation. All rights reserved.
+        {/* BOTTOM */}
+        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-gray-400">
+          <p>
+            © {new Date().getFullYear()} {siteName || "Ayah Foundation"}. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm">
-            <a href="#" className="text-gray-400 hover:text-white">Privacy Policy</a>
-            <a href="#" className="text-gray-400 hover:text-white">Terms of Service</a>
-            <a href="#" className="text-gray-400 hover:text-white">Transparency Report</a>
+            <a className="hover:text-white" href="#">Privacy Policy</a>
+            <a className="hover:text-white" href="#">Terms of Service</a>
+            <a className="hover:text-white" href="#">Transparency Report</a>
           </div>
         </div>
+
       </div>
     </footer>
   );

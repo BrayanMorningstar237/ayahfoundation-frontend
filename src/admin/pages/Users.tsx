@@ -23,12 +23,13 @@ interface AdminUser {
   createdAt: string;
 }
 
+//removed unused variables 
 const Users: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-  const [showUserModal, setShowUserModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [_showUserModal, setShowUserModal] = useState(false);
+  const [_editingUser, setEditingUser] = useState<AdminUser | null>(null);
 
   useEffect(() => {
     fetchUsers();

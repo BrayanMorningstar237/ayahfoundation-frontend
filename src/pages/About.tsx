@@ -176,7 +176,7 @@ const About = () => {
 
               {/* Stats Grid */}
 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-  {aboutData.stats.slice(0, 4).map((stat, index) => (
+  {aboutData.stats.slice(0, 4).map((stat, _index) => (
     <div
       key={stat.id}
       className="
