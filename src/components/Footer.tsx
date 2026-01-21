@@ -42,7 +42,7 @@ const Footer = () => {
   );
 
   return (
-    <footer className="bg-gray-900 text-white py-16 px-4 sm:px-6 lg:px-8">
+    <footer className="bg-gray-900 text-white py-16 px-4 sm:px-6 lg:px-8" id="contact">
       <div className="max-w-7xl mx-auto">
 
         {/* MAIN GRID */}

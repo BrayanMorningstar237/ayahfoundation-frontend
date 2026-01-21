@@ -155,9 +155,34 @@ function AnimatedImageWall({ images }: { images: WallImage[] }) {
 }
 
 
+const UnderConstruction = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white px-6">
+    <div className="text-center max-w-lg">
+      <img
+        src={logoimg}
+        alt="Ayah Foundation"
+        className="w-20 h-20 mx-auto mb-6 rounded-full"
+      />
+
+      <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+        Website Under Construction
+      </h1>
+
+      <p className="text-gray-600 text-lg leading-relaxed mb-6">
+        We’re currently making improvements behind the scenes.
+        Our website will be up and running very soon.
+      </p>
+
+      <p className="text-sm text-gray-400">
+        Thank you for your patience 💙
+      </p>
+    </div>
+  </div>
+);
 
 
 const Home = () => {
+  const [backendDown, setBackendDown] = useState(false);
    const [hero, setHero] = useState<PublicHero | null>(null);
   const [loadingHero, setLoadingHero] = useState(true);
   const [aboutData, setAboutData] = useState<any>(null);
@@ -188,13 +213,14 @@ const [successStories, setSuccessStories] = useState<any[]>([]);
   // LOAD HERO FROM BACKEND (PUBLIC)
   // =============================
   useEffect(() => {
-  const loadHero = async () => {
+   const loadHero = async () => {
     try {
       const data = await HeroPublicAPI.getHero();
-      console.log("PUBLIC HERO RESPONSE:", data); // 👈 ADD THIS
       setHero(data);
+      setBackendDown(false); // ✅ backend OK
     } catch (err) {
-      console.error('Failed to load hero', err);
+      console.error('Backend unreachable', err);
+      setBackendDown(true); // 🚨 backend down
     } finally {
       setLoadingHero(false);
     }
@@ -243,7 +269,7 @@ useEffect(() => {
   const loadStats = async () => {
   try {
     const response = await fetch(
-      "https://ayahfoundation-backend.onrender.com/api/public/sections/about"
+      "http://localhost:5000/api/public/sections/about"
     );
 
     if (!response.ok) {
@@ -323,7 +349,7 @@ const loadAbout = async () => {
 const loadPrograms = async () => {
     try {
       const res = await fetch(
-        'https://ayahfoundation-backend.onrender.com/api/public/sections/programs'
+        'http://localhost:5000/api/public/sections/programs'
       );
       const json = await res.json();
 
@@ -354,7 +380,7 @@ const loadPrograms = async () => {
 const loadNews = async () => {
     try {
       const res = await fetch(
-        "https://ayahfoundation-backend.onrender.com/api/public/sections/news"
+        "http://localhost:5000/api/public/sections/news"
       );
       const json = await res.json();
 
@@ -371,7 +397,7 @@ const loadNews = async () => {
   const loadCampaigns = async () => {
   try {
     const res = await fetch(
-      "https://ayahfoundation-backend.onrender.com/api/public/sections/campaigns"
+      "http://localhost:5000/api/public/sections/campaigns"
     );
 
     if (!res.ok) throw new Error("Failed to load campaigns");
@@ -388,7 +414,7 @@ const loadNews = async () => {
 };
 const loadTeam = async () => {
   try {
-    const res = await fetch("https://ayahfoundation-backend.onrender.com/api/public/sections/team");
+    const res = await fetch("http://localhost:5000/api/public/sections/team");
     if (!res.ok) throw new Error("Failed to load team");
 
     const section = await res.json();
@@ -422,7 +448,13 @@ const teamMembers = teamSection?.members ?? [];
 
   // GUARD GOES HERE — RIGHT HERE
   if (loadingHero) return null;
-  if (!hero || !hero.enabled) return null;
+
+if (backendDown) {
+  return <UnderConstruction />;
+}
+
+if (!hero || !hero.enabled) return null;
+
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
