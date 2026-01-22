@@ -683,10 +683,10 @@ export default function Campaigns() {
                                   {block.image ? (
                                     <div className="relative">
                                       <img
-                                        src={block.image}
-                                        className="w-full h-40 object-cover rounded-lg"
-                                        alt="Block"
-                                      />
+  src={block.image}
+  className="w-full h-auto rounded-lg"
+/>
+
                                       <label className="absolute bottom-3 right-3">
                                         <input
                                           type="file"

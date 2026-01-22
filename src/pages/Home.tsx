@@ -686,7 +686,7 @@ if (!hero || !hero.enabled) return null;
         <img 
           src={aboutData?.image}
           alt="Our team"
-          className="rounded-3xl shadow-2xl w-full h-96 object-cover"
+          className="rounded-3xl shadow-2xl w-full h-96 object-cover object-[50%_35%]"
         />
         <div className="absolute -bottom-6 -right-6 bg-blue-600 text-white p-8 rounded-2xl shadow-xl">
           <div className="text-5xl font-bold">{aboutData?.years}</div>
