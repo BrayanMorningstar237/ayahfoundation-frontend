@@ -156,29 +156,45 @@ function AnimatedImageWall({ images }: { images: WallImage[] }) {
 
 
 const UnderConstruction = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white px-6">
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100 px-6">
     <div className="text-center max-w-lg">
+      
+      {/* Logo */}
       <img
         src={logoimg}
         alt="Ayah Foundation"
-        className="w-20 h-20 mx-auto mb-6 rounded-full"
+        className="w-20 h-20 mx-auto mb-6 rounded-full shadow-md animate-pulse-slow"
       />
 
+      {/* Status badge */}
+      <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
+        <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+        Website updates in progress
+      </div>
+
+      {/* Heading */}
       <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-        Website Under Construction
+        We’re Improving Our Website
       </h1>
 
+      {/* Message */}
       <p className="text-gray-600 text-lg leading-relaxed mb-6">
-        We’re currently making improvements behind the scenes.
-        Our website will be up and running very soon.
+        Ayah Foundation is currently rolling out updates to improve your
+        experience and better share our impact.
+        <br />
+        <span className="font-medium text-gray-700">
+          Everything will be back shortly.
+        </span>
       </p>
 
+      {/* Footer note */}
       <p className="text-sm text-gray-400">
-        Thank you for your patience 💙
+        Thank you for your patience and continued support 💙
       </p>
     </div>
   </div>
 );
+
 
 
 const Home = () => {

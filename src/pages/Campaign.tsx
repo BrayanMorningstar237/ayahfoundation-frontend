@@ -8,7 +8,10 @@ import { motion, type Variants } from "framer-motion";
 /* ================= TYPES ================= */
 
 interface StoryBlock {
+  id: string;
+  type: "text" | "image" | "subtitle";
   text?: string;
+  image?: string;
 }
 
 interface SuccessStory {
@@ -159,14 +162,54 @@ export default function Campaign() {
             {Array.isArray(activeStory.blocks) &&
               activeStory.blocks.length > 0 && (
                 <div className="space-y-8 max-w-3xl">
-                  {activeStory.blocks.map((block, i) => (
-                    <p
-                      key={i}
-                      className="text-lg text-gray-700 leading-relaxed"
-                    >
-                      {block.text}
-                    </p>
-                  ))}
+                  <div className="space-y-10 max-w-3xl">
+  {activeStory.blocks.map((block) => {
+    switch (block.type) {
+      case "image":
+  return (
+    <figure key={block.id} className="my-10">
+      <img
+        src={block.image}
+        alt=""
+        loading="lazy"
+        className="
+          max-w-full
+          h-[100%]
+          mx-auto
+          rounded-2xl
+          shadow-md
+        "
+      />
+    </figure>
+  );
+
+
+      case "subtitle":
+        return (
+          <h3
+            key={block.id}
+            className="text-xl font-semibold text-gray-900"
+          >
+            {block.text}
+          </h3>
+        );
+
+      case "text":
+        return (
+          <p
+            key={block.id}
+            className="text-lg text-gray-700 leading-relaxed"
+          >
+            {block.text}
+          </p>
+        );
+
+      default:
+        return null;
+    }
+  })}
+</div>
+
                 </div>
               )}
           </article>
