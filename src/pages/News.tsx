@@ -6,7 +6,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 type NewsBlock = {
   id: string;
-  type?: "text" | "image";
+  type?: "text" | "image" | "video";
   value: string;
   description?: string;
 };
@@ -153,8 +153,11 @@ const News = () => {
                   </p>
                 )}
 
+                {/* ===== BLOCKS ===== */}
                 <div className="space-y-8">
                   {article.blocks?.map((block: NewsBlock) => {
+
+                    // IMAGE
                     if (block.type === "image") {
                       return (
                         <figure key={block.id}>
@@ -172,8 +175,34 @@ const News = () => {
                       );
                     }
 
+                    // VIDEO
+                    if (block.type === "video") {
+                      return (
+                        <div
+                          key={block.id}
+                          className="w-full rounded-2xl overflow-hidden bg-black"
+                        >
+                          <video
+                            src={block.value}
+                            controls
+                            preload="metadata"
+                            className="w-full max-h-[520px] object-contain bg-black"
+                          />
+                          {block.description && (
+                            <p className="text-sm text-gray-500 text-center mt-2 italic">
+                              {block.description}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    // TEXT
                     return (
-                      <p key={block.id} className="text-lg text-gray-700 leading-relaxed">
+                      <p
+                        key={block.id}
+                        className="text-lg text-gray-700 leading-relaxed"
+                      >
                         {block.value}
                       </p>
                     );
@@ -186,7 +215,7 @@ const News = () => {
             <aside className="lg:col-span-4 space-y-6 sticky top-24 h-fit">
 
               <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <h3 className="text-lg font-bold mb-4">More Stories</h3>
+                <h3 className="text-lg font-bold mb-4">More From Field</h3>
 
                 {allNews
                   .filter(n => n.id !== article.id)

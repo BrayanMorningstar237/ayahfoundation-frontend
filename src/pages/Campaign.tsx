@@ -165,6 +165,7 @@ export default function Campaign() {
                 w-full
                 aspect-[4/3]
                 sm:aspect-[16/9]
+                object-[50%_25%]
                 object-cover
                 rounded-3xl
                 shadow-xl
@@ -215,6 +216,7 @@ export default function Campaign() {
               w-full
               aspect-[4/3]
               object-cover
+              object-[50%_25%]
               rounded-2xl
               shadow-md
             "
@@ -320,7 +322,7 @@ export default function Campaign() {
                     src={story.mainImage}
                     alt={story.title}
                     className="
-                      w-full h-auto object-cover
+                      w-full h-auto object-cover object-[50%_25%]
                       transition-transform duration-700
                       group-hover:scale-110
                     "

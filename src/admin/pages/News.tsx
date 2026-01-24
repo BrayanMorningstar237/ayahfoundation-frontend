@@ -11,12 +11,13 @@ import {
   EyeOff,
   ChevronDown,
   ChevronUp,
-  X
+  MoveUp,
+  MoveDown,
+  Replace
 } from 'lucide-react';
 
 /* ================= TYPES ================= */
-
-type BlockType = 'subtitle' | 'text' | 'image';
+type BlockType = 'subtitle' | 'text' | 'image' | 'video';
 
 interface ContentBlock {
   id: string;
@@ -47,7 +48,6 @@ interface NewsContent {
 }
 
 /* ================= IMAGE UPLOAD ================= */
-
 const uploadImage = async (file: File, folder: string = 'sections/news') => {
   const formData = new FormData();
   formData.append('image', file);
@@ -62,11 +62,10 @@ const uploadImage = async (file: File, folder: string = 'sections/news') => {
   });
 
   if (!res.ok) throw new Error('Upload failed');
-  return res.json(); // { url }
+  return res.json();
 };
 
 /* ================= COMPONENT ================= */
-
 const News = () => {
   const [content, setContent] = useState<NewsContent>({
     header: {
@@ -84,14 +83,12 @@ const News = () => {
   const [previewMode, setPreviewMode] = useState(false);
 
   /* ================= FETCH WITH MIGRATION ================= */
-
   useEffect(() => {
     const load = async () => {
       try {
         const res = await fetch('http://localhost:5000/api/sections/news');
         const data = await res.json();
 
-        // Convert old body field to blocks if needed
         const news = (data.content?.news || []).map((n: any) => ({
           ...n,
           blocks: n.blocks 
@@ -119,7 +116,6 @@ const News = () => {
   }, []);
 
   /* ================= HELPERS ================= */
-
   const updateNews = (id: string, updates: Partial<NewsItem>) => {
     setContent(prev => ({
       ...prev,
@@ -160,7 +156,6 @@ const News = () => {
   };
 
   /* ================= BLOCK HELPERS ================= */
-
   const addBlock = (newsId: string, type: BlockType) => {
     setContent(prev => ({
       ...prev,
@@ -208,6 +203,36 @@ const News = () => {
     setDirty(true);
   };
 
+  /* ================= NEW: REORDER BLOCKS ================= */
+  const moveBlock = (newsId: string, blockId: string, direction: 'up' | 'down') => {
+    setContent(prev => {
+      const updatedNews = prev.news.map(news => {
+        if (news.id !== newsId) return news;
+
+        const blockIndex = news.blocks.findIndex(b => b.id === blockId);
+        if (blockIndex === -1) return news;
+
+        const newBlocks = [...news.blocks];
+        
+        if (direction === 'up' && blockIndex > 0) {
+          // Move block up
+          [newBlocks[blockIndex], newBlocks[blockIndex - 1]] = 
+          [newBlocks[blockIndex - 1], newBlocks[blockIndex]];
+        } 
+        else if (direction === 'down' && blockIndex < newBlocks.length - 1) {
+          // Move block down
+          [newBlocks[blockIndex], newBlocks[blockIndex + 1]] = 
+          [newBlocks[blockIndex + 1], newBlocks[blockIndex]];
+        }
+        
+        return { ...news, blocks: newBlocks };
+      });
+      
+      return { ...prev, news: updatedNews };
+    });
+    setDirty(true);
+  };
+
   const uploadAndSet = async (
     key: string,
     file: File,
@@ -232,7 +257,6 @@ const News = () => {
         return n;
       });
       
-      // Clean up blob URL
       setTimeout(() => {
         URL.revokeObjectURL(URL.createObjectURL(file));
       }, 1000);
@@ -240,9 +264,7 @@ const News = () => {
   };
 
   /* ================= SAVE ================= */
-
   const handleSave = async () => {
-    // Check for blob URLs
     const hasBlobUrls = content.news.some(item =>
       item.heroImage?.startsWith('blob:') ||
       item.gallery.some(img => img?.startsWith?.('blob:')) ||
@@ -257,7 +279,6 @@ const News = () => {
       return;
     }
 
-    // Check if any uploads are still in progress
     if (uploading.size > 0) {
       alert('Please wait for all uploads to finish.');
       return;
@@ -287,7 +308,6 @@ const News = () => {
   };
 
   /* ================= LOADING ================= */
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh] px-4">
@@ -300,7 +320,6 @@ const News = () => {
   }
 
   /* ================= UI ================= */
-
   return (
     <div className="space-y-8 md:space-y-12 pb-24 md:pb-32 px-4 md:px-6 max-w-7xl mx-auto">
       {/* HEADER WITH CONTROLS */}
@@ -420,6 +439,7 @@ const News = () => {
                 addBlock={addBlock}
                 updateBlock={updateBlock}
                 removeBlock={removeBlock}
+                moveBlock={moveBlock}
               />
             ))}
           </div>
@@ -442,6 +462,7 @@ const News = () => {
                 addBlock={addBlock}
                 updateBlock={updateBlock}
                 removeBlock={removeBlock}
+                moveBlock={moveBlock}
               />
             ))}
           </div>
@@ -527,7 +548,6 @@ const News = () => {
 };
 
 /* ================= NEWS CARD COMPONENT ================= */
-
 interface NewsCardProps {
   item: NewsItem;
   featured: boolean;
@@ -541,6 +561,7 @@ interface NewsCardProps {
   addBlock: (newsId: string, type: BlockType) => void;
   updateBlock: (newsId: string, blockId: string, value: string) => void;
   removeBlock: (newsId: string, blockId: string) => void;
+  moveBlock: (newsId: string, blockId: string, direction: 'up' | 'down') => void;
 }
 
 const NewsCard: React.FC<NewsCardProps> = ({
@@ -554,7 +575,8 @@ const NewsCard: React.FC<NewsCardProps> = ({
   previewMode,
   addBlock,
   updateBlock,
-  removeBlock
+  removeBlock,
+  moveBlock
 }) => {
   return (
     <div className={`bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${
@@ -606,7 +628,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
         </div>
       </div>
 
-      {/* HERO IMAGE - Fixed height for consistency */}
+      {/* HERO IMAGE */}
       <div className="relative h-48 overflow-hidden group">
         {item.heroImage ? (
           <div className="relative w-full h-full">
@@ -633,7 +655,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
         
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         
-        {/* IMAGE UPLOAD BUTTON (Only in edit mode) */}
+        {/* IMAGE UPLOAD BUTTON */}
         {!previewMode && (
           <div className="absolute bottom-2 right-2">
             <label className="cursor-pointer">
@@ -669,7 +691,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
         )}
       </div>
 
-      {/* CARD CONTENT - Always visible area for title/subtitle */}
+      {/* CARD CONTENT */}
       <div className="p-4 bg-white">
         {previewMode ? (
           <>
@@ -707,7 +729,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
         )}
       </div>
 
-      {/* EXPANDED CONTENT EDITOR - Only visible when expanded */}
+      {/* EXPANDED CONTENT EDITOR */}
       {expanded && !previewMode && (
         <div className="border-t border-gray-200 p-4 md:p-6 space-y-6 bg-white text-gray-900 max-h-[500px] overflow-y-auto">
           {/* STATUS CONTROLS */}
@@ -750,49 +772,116 @@ const NewsCard: React.FC<NewsCardProps> = ({
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h4 className="font-medium text-gray-900">Article Content</h4>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => addBlock(item.id, 'subtitle')}
-                  className="px-3 py-2 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm flex items-center gap-2"
-                >
-                  <Plus size={14} /> Subtitle
-                </button>
-                <button
-                  onClick={() => addBlock(item.id, 'text')}
-                  className="px-3 py-2 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm flex items-center gap-2"
-                >
-                  <Plus size={14} /> Text
-                </button>
-                <button
-                  onClick={() => addBlock(item.id, 'image')}
-                  className="px-3 py-2 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm flex items-center gap-2"
-                >
-                  <Plus size={14} /> Image
-                </button>
+              <div className="overflow-x-auto">
+                <div className="flex gap-2 whitespace-nowrap pb-2">
+                  <button
+                    onClick={() => addBlock(item.id, 'subtitle')}
+                    className="shrink-0 px-3 py-2 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm flex items-center gap-2"
+                  >
+                    <Plus size={14} /> Subtitle
+                  </button>
+                  <button
+                    onClick={() => addBlock(item.id, 'text')}
+                    className="shrink-0 px-3 py-2 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm flex items-center gap-2"
+                  >
+                    <Plus size={14} /> Text
+                  </button>
+                  <button
+                    onClick={() => addBlock(item.id, 'image')}
+                    className="shrink-0 px-3 py-2 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm flex items-center gap-2"
+                  >
+                    <Plus size={14} /> Image
+                  </button>
+                  <button
+                    onClick={() => addBlock(item.id, 'video')}
+                    className="shrink-0 px-3 py-2 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm flex items-center gap-2"
+                  >
+                    <Plus size={14} /> Video
+                  </button>
+                </div>
               </div>
             </div>
             
             <div className="space-y-3">
-              {item.blocks.map((block) => (
+              {item.blocks.map((block, index) => (
                 <div key={block.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3 relative">
-                  <div className="absolute top-2 left-2 text-xs text-gray-500 bg-white px-2 py-1 rounded border">
-                    {block.type}
+                  {/* BLOCK CONTROLS */}
+                  <div className="absolute top-2 left-2 flex items-center gap-1">
+                    <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded border">
+                      {block.type}
+                    </span>
+                    
+                    {/* REORDER BUTTONS */}
+                    {item.blocks.length > 1 && (
+                      <div className="flex bg-white border rounded-md overflow-hidden">
+                        <button
+                          onClick={() => moveBlock(item.id, block.id, 'up')}
+                          disabled={index === 0}
+                          className="px-2 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                          aria-label="Move up"
+                        >
+                          <MoveUp size={12} />
+                        </button>
+                        <div className="w-px bg-gray-300" />
+                        <button
+                          onClick={() => moveBlock(item.id, block.id, 'down')}
+                          disabled={index === item.blocks.length - 1}
+                          className="px-2 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                          aria-label="Move down"
+                        >
+                          <MoveDown size={12} />
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  
-                  <button
-                    onClick={() => removeBlock(item.id, block.id)}
-                    className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
-                    aria-label="Remove block"
-                  >
-                    <Trash2 size={14} />
-                  </button>
 
+                  {/* ACTION BUTTONS */}
+                  <div className="absolute top-2 right-2 flex gap-2">
+                    {(block.type === 'image' || block.type === 'video') && block.value && (
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          hidden
+                          accept={block.type === 'image' ? 'image/*' : 'video/*'}
+                          onChange={async e => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const folder = block.type === 'image' 
+                              ? 'sections/news/blocks' 
+                              : 'sections/news/videos';
+                            await onUpload(
+                              block.id,
+                              file,
+                              (url) => updateBlock(item.id, block.id, url),
+                              folder
+                            );
+                          }}
+                          disabled={uploading.has(block.id)}
+                        />
+                        <div className={`bg-blue-500 text-white rounded-full p-1 hover:bg-blue-600 ${
+                          uploading.has(block.id) ? 'opacity-50 cursor-not-allowed' : ''
+                        }`} title="Replace">
+                          <Replace size={12} />
+                        </div>
+                      </label>
+                    )}
+                    
+                    <button
+                      onClick={() => removeBlock(item.id, block.id)}
+                      className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      aria-label="Remove block"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+
+                  {/* BLOCK CONTENT */}
                   {block.type === 'subtitle' && (
                     <input
                       value={block.value}
                       onChange={e => updateBlock(item.id, block.id, e.target.value)}
                       placeholder="Subtitle"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg font-semibold text-gray-900 bg-white mt-6"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg font-semibold text-gray-900 bg-white mt-8"
                     />
                   )}
 
@@ -802,29 +891,26 @@ const NewsCard: React.FC<NewsCardProps> = ({
                       onChange={e => updateBlock(item.id, block.id, e.target.value)}
                       placeholder="Text content"
                       rows={4}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white mt-6 resize-y text-gray-900"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white mt-8 resize-y text-gray-900"
                     />
                   )}
 
                   {block.type === 'image' && (
-                    <div className="space-y-2 mt-6">
+                    <div className="space-y-2 mt-8">
                       {block.value ? (
                         <div className="relative">
                           <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
                             <img
                               src={block.value}
                               alt="Content"
-                              className="w-full h-full object-contain cursor-pointer"
-                              onClick={() => window.open(block.value, '_blank')}
+                              className="w-full h-full object-contain"
                             />
                           </div>
-                          <button
-                            onClick={() => updateBlock(item.id, block.id, '')}
-                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                            aria-label="Remove image"
-                          >
-                            <X size={12} />
-                          </button>
+                          {block.value.startsWith('blob:') && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                              <Loader2 className="animate-spin text-white" size={24} />
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <label className="cursor-pointer block">
@@ -842,10 +928,71 @@ const NewsCard: React.FC<NewsCardProps> = ({
                                 'sections/news/blocks'
                               );
                             }}
+                            disabled={uploading.has(block.id)}
                           />
-                          <div className="aspect-video border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-blue-500 hover:text-blue-500 transition">
-                            <ImageIcon size={24} />
-                            <span className="text-sm mt-2">Add Image</span>
+                          <div className={`aspect-video border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-blue-500 hover:text-blue-500 transition ${
+                            uploading.has(block.id) ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}>
+                            {uploading.has(block.id) ? (
+                              <Loader2 className="animate-spin" size={24} />
+                            ) : (
+                              <>
+                                <ImageIcon size={24} />
+                                <span className="text-sm mt-2">Add Image</span>
+                              </>
+                            )}
+                          </div>
+                        </label>
+                      )}
+                    </div>
+                  )}
+
+                  {block.type === 'video' && (
+                    <div className="space-y-2 mt-8">
+                      {block.value ? (
+                        <div className="relative">
+                          <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                            <video
+                              src={block.value}
+                              controls
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          {block.value.startsWith('blob:') && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                              <Loader2 className="animate-spin text-white" size={24} />
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <label className="cursor-pointer block">
+                          <input
+                            type="file"
+                            hidden
+                            accept="video/*"
+                            onChange={async e => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              await onUpload(
+                                block.id,
+                                file,
+                                (url) => updateBlock(item.id, block.id, url),
+                                'sections/news/videos'
+                              );
+                            }}
+                            disabled={uploading.has(block.id)}
+                          />
+                          <div className={`aspect-video border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-blue-500 hover:text-blue-500 transition ${
+                            uploading.has(block.id) ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}>
+                            {uploading.has(block.id) ? (
+                              <Loader2 className="animate-spin" size={24} />
+                            ) : (
+                              <>
+                                <Upload size={24} />
+                                <span className="text-sm mt-2">Upload Video</span>
+                              </>
+                            )}
                           </div>
                         </label>
                       )}
@@ -853,6 +1000,13 @@ const NewsCard: React.FC<NewsCardProps> = ({
                   )}
                 </div>
               ))}
+              
+              {item.blocks.length === 0 && (
+                <div className="text-center py-8 text-gray-500 border border-dashed border-gray-300 rounded-lg">
+                  <p>No content blocks added yet.</p>
+                  <p className="text-sm mt-1">Use the buttons above to add content.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -37,9 +37,12 @@ interface CampaignContent {
 const uploadFile = async (
   file: File,
   onProgress?: (p: number) => void
-): Promise<{ url: string; publicId: string }> => {
+): Promise<{ url: string; publicId: string; resourceType: 'image' | 'video' }> => {
   const formData = new FormData();
+
+  // ✅ MUST be "file" (matches multer.single('file'))
   formData.append('image', file);
+
   formData.append('folder', 'sections/campaigns');
 
   const res = await axios.post(
@@ -58,6 +61,7 @@ const uploadFile = async (
 
   return res.data;
 };
+
 
 /* ================= COMPONENT ================= */
 
@@ -385,10 +389,13 @@ export default function Campaigns() {
                       <div className="space-y-3">
                         <div className="relative rounded-xl overflow-hidden">
                           <video
-                            src={content.video.videoUrl}
-                            className="w-full h-40 object-cover"
-                            controls
-                          />
+  key={content.video.videoUrl}
+  src={content.video.videoUrl ? `${content.video.videoUrl}#t=0.1` : undefined}
+  className="w-full h-40 object-cover"
+  controls
+  preload="metadata"
+/>
+
                           <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/60 to-transparent p-3">
                             <span className="text-white text-sm font-medium">Current Video</span>
                           </div>

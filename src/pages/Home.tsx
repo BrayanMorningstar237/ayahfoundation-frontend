@@ -195,6 +195,8 @@ const UnderConstruction = () => (
   </div>
 );
 
+const isEmbedUrl = (url?: string) =>
+  !!url && (url.includes('youtube') || url.includes('vimeo'));
 
 
 const Home = () => {
@@ -710,9 +712,6 @@ if (!hero || !hero.enabled) return null;
           {aboutData?.storyParagraph1}
         </p>
 
-        <p className="text-gray-600 leading-relaxed">
-          {aboutData?.storyParagraph2}
-        </p>
 
         <div className="flex gap-4 pt-4">
           <div className="flex-1 bg-blue-50 p-4 rounded-xl">
@@ -1264,44 +1263,45 @@ if (!hero || !hero.enabled) return null;
 
       
       {/* Video Modal */}
-      {videoModal && (
-        <div 
-          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-          onClick={() => setVideoModal(false)}
-        >
-          <div className="relative max-w-5xl w-full">
-            <button 
-              onClick={() => setVideoModal(false)}
-              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition"
-            >
-              <X className="w-8 h-8" />
-            </button>
-            <div className="bg-black rounded-2xl overflow-hidden aspect-video">
-              {campaignVideo?.videoUrl ? (
-  <iframe
-    src={campaignVideo.videoUrl}
-    className="w-full h-full"
-    allow="autoplay; fullscreen"
-    allowFullScreen
-  />
-) : (
-  <img
-    src={campaignVideo?.thumbnail}
-    alt={campaignVideo?.title}
-    className="w-full h-full object-cover"
-  />
+      {videoModal && campaignVideo?.videoUrl && (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 px-4"
+    onClick={() => setVideoModal(false)}
+  >
+    <div
+      className="relative w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden"
+      onClick={(e) => e.stopPropagation()} // ✅ prevent close on video click
+    >
+      {/* Close button */}
+      <button
+        onClick={() => setVideoModal(false)}
+        className="absolute top-4 right-4 z-10 text-white hover:text-gray-300"
+        aria-label="Close video"
+      >
+        <X className="w-7 h-7" />
+      </button>
+
+      {/* VIDEO RENDERING */}
+      {isEmbedUrl(campaignVideo.videoUrl) ? (
+        <iframe
+          src={`${campaignVideo.videoUrl}?autoplay=1`}
+          className="w-full h-full"
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowFullScreen
+        />
+      ) : (
+        <video
+          src={campaignVideo.videoUrl}
+          className="w-full h-full object-cover"
+          controls
+          autoPlay
+          playsInline
+        />
+      )}
+    </div>
+  </div>
 )}
 
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <Play className="w-10 h-10 text-white fill-white ml-1" />
-                </div>
-              </div>
-            </div>
-            <p className="text-white text-center mt-4">Video player would be integrated here</p>
-          </div>
-        </div>
-      )}
 
       <style>{`
         @keyframes fadeInLeft {
