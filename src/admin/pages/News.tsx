@@ -53,7 +53,7 @@ const uploadImage = async (file: File, folder: string = 'sections/news') => {
   formData.append('image', file);
   formData.append('folder', folder);
 
-  const res = await fetch('https://ayahfoundation-backend.onrender.com//api/dashboard/upload/single', {
+  const res = await fetch('https://ayahfoundation-backend.onrender.com/api/dashboard/upload/single', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${localStorage.getItem('adminToken')}`
@@ -86,7 +86,7 @@ const News = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('https://ayahfoundation-backend.onrender.com//api/sections/news');
+        const res = await fetch('https://ayahfoundation-backend.onrender.com/api/sections/news');
         const data = await res.json();
 
         const news = (data.content?.news || []).map((n: any) => ({
@@ -285,7 +285,7 @@ const News = () => {
     }
 
     try {
-      const response = await fetch('https://ayahfoundation-backend.onrender.com//api/sections/news', {
+      const response = await fetch('https://ayahfoundation-backend.onrender.com/api/sections/news', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

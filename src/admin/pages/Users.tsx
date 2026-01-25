@@ -38,7 +38,7 @@ const Users: React.FC = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await axios.get('https://ayahfoundation-backend.onrender.com//api/dashboard/users', {
+      const response = await axios.get('https://ayahfoundation-backend.onrender.com/api/dashboard/users', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(response.data.users || []);
@@ -67,7 +67,7 @@ const Users: React.FC = () => {
     try {
       const token = localStorage.getItem('adminToken');
       await axios.put(
-        `https://ayahfoundation-backend.onrender.com//api/dashboard/users/${userId}/status`,
+        `https://ayahfoundation-backend.onrender.com/api/dashboard/users/${userId}/status`,
         { isActive: !currentStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -81,7 +81,7 @@ const Users: React.FC = () => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
         const token = localStorage.getItem('adminToken');
-        await axios.delete(`https://ayahfoundation-backend.onrender.com//api/dashboard/users/${userId}`, {
+        await axios.delete(`https://ayahfoundation-backend.onrender.com/api/dashboard/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         fetchUsers();

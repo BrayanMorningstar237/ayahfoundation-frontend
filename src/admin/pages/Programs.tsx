@@ -42,7 +42,7 @@ const uploadImage = async (file: File, folder: string) => {
   formData.append('folder', folder);
 
   const res = await fetch(
-    'https://ayahfoundation-backend.onrender.com//api/dashboard/upload/single',
+    'https://ayahfoundation-backend.onrender.com/api/dashboard/upload/single',
     {
       method: 'POST',
       headers: {
@@ -71,7 +71,7 @@ const Programs = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('https://ayahfoundation-backend.onrender.com//api/sections/programs');
+        const res = await fetch('https://ayahfoundation-backend.onrender.com/api/sections/programs');
         const data = await res.json();
         setItems(data.content?.programs || []);
       } catch (error) {
@@ -245,7 +245,7 @@ const Programs = () => {
     }
 
     try {
-      const response = await fetch('https://ayahfoundation-backend.onrender.com//api/sections/programs', {
+      const response = await fetch('https://ayahfoundation-backend.onrender.com/api/sections/programs', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
