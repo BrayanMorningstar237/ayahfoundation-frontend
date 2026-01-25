@@ -375,7 +375,7 @@ const About = () => {
                 Contact
               </button>
               <button
-                onClick={() => navigate("/donate")}
+                onClick={() => navigate("/donation")}
                 className="flex items-center gap-3 w-full px-3 py-2.5 text-blue-600 hover:bg-blue-50 rounded-md text-sm font-medium"
               >
                 <Heart className="w-4 h-4" />
@@ -444,7 +444,7 @@ const About = () => {
                 {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
-                    onClick={() => navigate("/donate")}
+                    onClick={() => navigate("/donation")}
                     className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
                   >
                     Support Our Mission
@@ -602,7 +602,7 @@ const About = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
-                onClick={() => navigate("/donate")}
+                onClick={() => navigate("/donation")}
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
               >
                 Donate Now

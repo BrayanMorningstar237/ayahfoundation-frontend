@@ -8,6 +8,7 @@ import Campaign from "./pages/Campaign";
 import AdminApp from "./admin/AdminApp";
 import AdminLogin from "./admin/pages/AdminLogin";
 
+import Donation from "./pages/Donation";
 import Footer from "./components/Footer";
 import ScrollToTop from "./pages/ScrollToTop";
 
@@ -94,6 +95,16 @@ function App() {
     </PublicLayout>
   }
 />
+
+<Route
+  path="/donation"
+  element={
+    <PublicLayout>
+      <Donation />
+    </PublicLayout>
+  }
+/>
+
 
         <Route
           path="/news/:id"

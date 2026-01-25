@@ -24,7 +24,7 @@ const uploadImage = async (file: File, folder: string) => {
   formData.append('folder', folder);
 
   const res = await fetch(
-    'http://localhost:5000/api/dashboard/upload/single',
+    'https://ayahfoundation-backend.onrender.com//api/dashboard/upload/single',
     {
       method: 'POST',
       headers: {
@@ -80,7 +80,7 @@ const Sections = () => {
     const fetchSection = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch('http://localhost:5000/api/sections/about');
+        const res = await fetch('https://ayahfoundation-backend.onrender.com//api/sections/about');
         
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -275,7 +275,7 @@ setStats(content.stats || []);
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/sections/about', {
+      const response = await fetch('https://ayahfoundation-backend.onrender.com//api/sections/about', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

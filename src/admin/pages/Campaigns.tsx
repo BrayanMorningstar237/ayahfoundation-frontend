@@ -46,7 +46,7 @@ const uploadFile = async (
   formData.append('folder', 'sections/campaigns');
 
   const res = await axios.post(
-    'http://localhost:5000/api/dashboard/upload/single',
+    'https://ayahfoundation-backend.onrender.com//api/dashboard/upload/single',
     formData,
     {
       headers: {
@@ -88,7 +88,7 @@ export default function Campaigns() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/sections/campaigns');
+        const res = await fetch('https://ayahfoundation-backend.onrender.com//api/sections/campaigns');
         const data = await res.json();
         if (data?.content) setContent(data.content);
       } catch (error) {
@@ -218,7 +218,7 @@ export default function Campaigns() {
     };
 
     try {
-      await fetch('http://localhost:5000/api/sections/campaigns', {
+      await fetch('https://ayahfoundation-backend.onrender.com//api/sections/campaigns', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

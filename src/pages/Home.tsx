@@ -358,7 +358,7 @@ useEffect(() => {
     const loadStats = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/public/sections/about"
+          "https://ayahfoundation-backend.onrender.com//api/public/sections/about"
         );
 
         if (!response.ok) {
@@ -424,7 +424,7 @@ useEffect(() => {
     const loadPrograms = async () => {
       try {
         const res = await fetch(
-          'http://localhost:5000/api/public/sections/programs'
+          'https://ayahfoundation-backend.onrender.com//api/public/sections/programs'
         );
         const json = await res.json();
         const dbPrograms = json?.content?.programs ?? [];
@@ -449,7 +449,7 @@ useEffect(() => {
     const loadNews = async () => {
       try {
         const res = await fetch(
-          "http://localhost:5000/api/public/sections/news"
+          "https://ayahfoundation-backend.onrender.com//api/public/sections/news"
         );
         const json = await res.json();
 
@@ -466,7 +466,7 @@ useEffect(() => {
     const loadCampaigns = async () => {
       try {
         const res = await fetch(
-          "http://localhost:5000/api/public/sections/campaigns"
+          "https://ayahfoundation-backend.onrender.com//api/public/sections/campaigns"
         );
         if (!res.ok) throw new Error("Failed to load campaigns");
         const section = await res.json();
@@ -479,7 +479,7 @@ useEffect(() => {
 
     const loadTeam = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/public/sections/team");
+        const res = await fetch("https://ayahfoundation-backend.onrender.com//api/public/sections/team");
         if (!res.ok) throw new Error("Failed to load team");
         const section = await res.json();
         setTeamSection(section?.content);
@@ -1083,7 +1083,7 @@ useEffect(() => {
         Achievements & Success Stories
       </h2>
       <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
-        These stories represent the heart of our work — real people, real change, real hope.
+        These stories represent the heart of our work, real people, real change, real hope.
       </p>
     </div>
 

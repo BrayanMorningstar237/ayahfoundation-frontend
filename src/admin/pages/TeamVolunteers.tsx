@@ -48,7 +48,7 @@ const uploadImage = async (file: File) => {
   formData.append('folder', 'sections/team');
 
   const res = await fetch(
-    'http://localhost:5000/api/dashboard/upload/single',
+    'https://ayahfoundation-backend.onrender.com//api/dashboard/upload/single',
     {
       method: 'POST',
       headers: {
@@ -80,7 +80,7 @@ export default function TeamVolunteers() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/sections/team');
+        const res = await fetch('https://ayahfoundation-backend.onrender.com//api/sections/team');
         const data = await res.json();
         if (data?.content) {
   setContent({
@@ -170,7 +170,7 @@ export default function TeamVolunteers() {
 
   const save = async () => {
     try {
-      await fetch('http://localhost:5000/api/sections/team', {
+      await fetch('https://ayahfoundation-backend.onrender.com//api/sections/team', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

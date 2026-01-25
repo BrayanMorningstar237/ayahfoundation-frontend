@@ -58,10 +58,10 @@ const Dashboard: React.FC = () => {
       }
 
       const [statsResponse, activityResponse] = await Promise.all([
-        axios.get('http://localhost:5000/api/dashboard/stats', {
+        axios.get('https://ayahfoundation-backend.onrender.com//api/dashboard/stats', {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get('http://localhost:5000/api/dashboard/activity', {
+        axios.get('https://ayahfoundation-backend.onrender.com//api/dashboard/activity', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -159,7 +159,7 @@ const Dashboard: React.FC = () => {
                   Retry
                 </button>
                 <a
-                  href="http://localhost:5000/api/health"
+                  href="https://ayahfoundation-backend.onrender.com//api/health"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50"
