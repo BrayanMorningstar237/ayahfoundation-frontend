@@ -281,7 +281,7 @@ const About = () => {
 
             {/* Center: Brand */}
             <div className="absolute left-1/2 transform -translate-x-1/2">
-              <span className="text-base font-bold text-gray-900">Ayah Foundation</span>
+              <span className="text-base font-bold text-gray-900  -ml-10 md;ml-0">Ayah Foundation</span>
             </div>
 
             {/* Right: Actions */}
