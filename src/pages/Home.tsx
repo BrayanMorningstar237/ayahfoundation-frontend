@@ -513,7 +513,7 @@ useEffect(() => {
             <div className="flex items-center">
               <img src={logoimg} alt="AFLogo" height={44} width={44} />
               <span className="ml-2 font-brand text-[15px] sm:text-lg lg:text-2xl font-semibold tracking-tight text-gray-900">
-                Ayah Foundation
+                AYAH FOUNDATION
               </span>
             </div>
             <div></div>
