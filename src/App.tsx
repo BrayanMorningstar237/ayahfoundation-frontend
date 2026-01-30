@@ -11,6 +11,7 @@ import DonateStripePage from "./pages/DonateStripe";
 import Donation from "./pages/Donation";
 import Footer from "./components/Footer";
 import ScrollToTop from "./pages/ScrollToTop";
+import DonationSuccess from "./pages/DonationSuccess";
 
 function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -105,6 +106,7 @@ function App() {
   }
 />
 <Route path="/donate" element={<PublicLayout><DonateStripePage /></PublicLayout>} />
+<Route path="/donation-success" element={<DonationSuccess />} />
 
         <Route
           path="/news/:id"
