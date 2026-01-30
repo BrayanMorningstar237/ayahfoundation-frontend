@@ -602,7 +602,7 @@ const About = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
-                onClick={() => navigate("/donation")}
+                onClick={() => navigate("/donate")}
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
               >
                 Donate Now

@@ -6,13 +6,15 @@ import { Facebook, Twitter, Linkedin } from 'lucide-react';
 import type { PublicHero, WallImage } from '../services/hero.public.api';
 import { HeroPublicAPI } from '../services/hero.public.api';
 import { SectionsPublicAPI } from "../services/sections.public.api";
+import PayPalDonateModal from "./PayPalDonate";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import {
   Users,
   Home as HomeIcon,
   HandHeart,
 } from "lucide-react";
-
+import VideoHighlights from "./VideoHighlights";
 function AnimatedImageWall({ images }: { images: WallImage[] }) {
   const [flipped, setFlipped] = useState<Set<number>>(new Set());
   const [cols, setCols] = useState(8);
@@ -179,6 +181,8 @@ const Home = () => {
   const campaignVideo = campaignsSection?.content?.video;
   const [teamSection, setTeamSection] = useState<any>(null);
   const [successStories, setSuccessStories] = useState<any[]>([]);
+  const [donateModal, setDonateModal] = useState(false);
+const navigate = useNavigate();
   const [impactStats, setImpactStats] = useState<
     {
       number: string;
@@ -496,6 +500,7 @@ useEffect(() => {
     loadTeam();
   }, []);
 
+
   const featuredNews = newsItems.filter(n => n.featured);
   const regularNews = newsItems.filter(n => !n.featured);
   const teamMembers = teamSection?.members ?? [];
@@ -505,7 +510,10 @@ useEffect(() => {
   if (!hero || !hero.enabled) return null;
 
   return (
+    
     <div className="min-h-screen bg-white overflow-x-hidden">
+      {donateModal && <PayPalDonateModal onClose={() => setDonateModal(false)} />}
+
       {/* Navigation */}
       <nav className="fixed top-0 left-0 w-full bg-white/95 backdrop-blur-md shadow-sm z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -582,9 +590,17 @@ useEffect(() => {
                 {hero.description}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-9 py-4 rounded-full font-semibold shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5">
-                  {hero.donateButtonText}
-                </button>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
+
+<button
+  onClick={() => navigate("/donate")}
+  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-semibold"
+>
+  {hero.donateButtonText}
+</button>
+
+</div>
+
                 <button
                   onClick={() => setVideoModal(true)}
                   className="bg-white/90 backdrop-blur border border-gray-200 text-gray-900 px-9 py-4 rounded-full font-semibold shadow transition transform hover:-translate-y-0.5"
@@ -725,6 +741,9 @@ useEffect(() => {
           </div>
         </div>
       </section>
+      
+      {/* Video Higlights */}
+<VideoHighlights />
 
       {/* Programs & Projects Section */}
     <section
