@@ -640,9 +640,9 @@ useEffect(() => {
         <button
           onClick={() => navigate("/donate")}
           className="
-            bg-white text-teal-700 font-semibold
+            bg-white text-[#1d73b4] font-semibold
             px-6 py-3 rounded-full
-            hover:bg-cyan-100 transition
+            hover:bg-blue-300 transition
           "
         >
           {hero.donateButtonText}
