@@ -15,36 +15,52 @@ import {
   HandHeart,
 } from "lucide-react";
 import VideoHighlights from "./VideoHighlights";
-function AnimatedImageWall({ images }: { images: WallImage[] }) {
+interface AnimatedImageWallProps {
+  images: WallImage[];
+  height?: string; // optional
+}
+function AnimatedImageWall({ images, height }: AnimatedImageWallProps) {
   const [flipped, setFlipped] = useState<Set<number>>(new Set());
   const [cols, setCols] = useState(8);
   const [hovered, setHovered] = useState<number | null>(null);
+  const [rows, setRows] = useState(1);
 
+  // Determine number of columns based on screen width
   useEffect(() => {
     const updateCols = () => {
       const w = window.innerWidth;
-      setCols(w < 640 ? 4 : w < 1024 ? 6 : 8);
+      if (w < 640) setCols(4);
+      else if (w < 1024) setCols(6);
+      else setCols(8);
     };
-
     updateCols();
     window.addEventListener("resize", updateCols);
     return () => window.removeEventListener("resize", updateCols);
   }, []);
 
-  const safeImages = images?.length ? images : [];
+  // Calculate rows to fill screen with square tiles
+  useEffect(() => {
+    const updateRows = () => {
+      const tileWidth = window.innerWidth / cols;
+      const numRows = Math.ceil(window.innerHeight / tileWidth);
+      setRows(numRows);
+    };
+    updateRows();
+    window.addEventListener("resize", updateRows);
+    return () => window.removeEventListener("resize", updateRows);
+  }, [cols]);
 
-  const total = useMemo(() => cols * Math.floor(cols / 1.8), [cols]);
+  const safeImages = images?.length ? images : [];
+  const total = cols * rows;
 
   const tiles = useMemo(() => {
     if (!safeImages.length) return [];
-
     return Array.from({ length: total }, () => {
       let a, b;
       do {
         a = safeImages[Math.floor(Math.random() * safeImages.length)].url;
         b = safeImages[Math.floor(Math.random() * safeImages.length)].url;
       } while (a === b);
-
       return { a, b };
     });
   }, [safeImages, total]);
@@ -56,10 +72,7 @@ function AnimatedImageWall({ images }: { images: WallImage[] }) {
       const next = new Set(prev);
 
       if (next.size > 6) {
-        [...next]
-          .sort(() => Math.random() - 0.5)
-          .slice(0, 2)
-          .forEach(i => next.delete(i));
+        [...next].sort(() => Math.random() - 0.5).slice(0, 2).forEach(i => next.delete(i));
       }
 
       const count = Math.floor(Math.random() * 3) + 1;
@@ -73,24 +86,24 @@ function AnimatedImageWall({ images }: { images: WallImage[] }) {
 
   useEffect(() => {
     if (!tiles.length) return;
-
     const interval = setInterval(flipRandomTiles, 900);
     return () => clearInterval(interval);
   }, [flipRandomTiles, tiles.length]);
 
-  if (!tiles.length) {
-    return (
-      <div className="h-[320px] flex items-center justify-center text-sm text-gray-400">
-        Image wall unavailable
-      </div>
-    );
-  }
+  if (!tiles.length) return (
+    <div className="h-screen flex items-center justify-center text-sm text-gray-400">
+      Image wall unavailable
+    </div>
+  );
 
-  return (
-    <div className="w-full max-h-[560px] overflow-visible">
+    return (
+    <div className="w-full flex items-center justify-center overflow-hidden" style={{ height }}>
       <div
-        className="grid gap-px overflow-visible"
-        style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+        className="grid w-full h-full gap-px"
+        style={{
+          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+          gridTemplateRows: `repeat(${rows}, 1fr)`,
+        }}
       >
         {tiles.map((img, i) => {
           const isFlipped = flipped.has(i);
@@ -99,19 +112,11 @@ function AnimatedImageWall({ images }: { images: WallImage[] }) {
           return (
             <motion.div
               key={i}
-              className="relative aspect-square cursor-pointer"
-              style={{
-                transformStyle: "preserve-3d",
-                zIndex: isHovered ? 20 : 1,
-              }}
+              className="relative w-full h-full cursor-pointer"
+              style={{ transformStyle: "preserve-3d", zIndex: isHovered ? 20 : 1 }}
               animate={{ rotateY: isFlipped ? 180 : 0 }}
-              whileHover={{
-                scale: 1.35,
-              }}
-              transition={{
-                duration: 0.6,
-                ease: "easeInOut",
-              }}
+              whileHover={{ scale: 1.35 }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
               onHoverStart={() => setHovered(i)}
               onHoverEnd={() => setHovered(null)}
             >
@@ -135,7 +140,9 @@ function AnimatedImageWall({ images }: { images: WallImage[] }) {
       </div>
     </div>
   );
+
 }
+
 
 const UnderConstruction = () => (
   <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100 px-6">
@@ -499,7 +506,20 @@ useEffect(() => {
     loadCampaigns();
     loadTeam();
   }, []);
+  const [_imgHeight, setImgHeight] = useState("40vh");
+ // Dynamically adjust height based on viewport (mobile-first)
+  useEffect(() => {
+    const updateHeight = () => {
+      const width = window.innerWidth;
+      if (width < 640) setImgHeight("40vh");
+      else if (width < 1024) setImgHeight("55vh");
+      else setImgHeight("60vh");
+    };
 
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
 
   const featuredNews = newsItems.filter(n => n.featured);
   const regularNews = newsItems.filter(n => !n.featured);
@@ -563,71 +583,137 @@ useEffect(() => {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section
-        id="home"
-        className="relative pt-14 sm:pt-20 pb-20 lg:px-8 min-h-screen flex items-center overflow-hidden bg-gradient-to-b from-white via-blue-50/40 to-white"
-      >
-        <div className="absolute -top-32 -right-32 w-[420px] h-[420px] bg-blue-100 rounded-full blur-3xl opacity-50" />
-        <div className="absolute bottom-0 -left-32 w-[320px] h-[320px] bg-blue-50 rounded-full blur-3xl opacity-60" />
-
-        {hero?.enabled && (
-          <div className="relative max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-14 items-center">
-            <div
-              className="space-y-2 px-5 -mt-5 order-2 lg:order-1 text-center lg:text-left"
-              style={{ animation: "fadeInLeft 1.1s cubic-bezier(0.16, 1, 0.3, 1)" }}
-            >
-              <span className="inline-block text-xs sm:text-sm font-semibold tracking-widest uppercase text-blue-600/80">
-                {hero.tagline}
-              </span>
-              <h1 className="font-extrabold text-[2.6rem] sm:text-5xl lg:text-[3.6rem] leading-[1.05] text-gray-900 tracking-tight">
-                {hero.titleLine1}
-                <span className="block mt-2 text-blue-600">
-                  {hero.titleLine2}
-                </span>
-              </h1>
-              <p className="text-base sm:text-lg text-gray-600 max-w-xl mx-auto lg:mx-0">
-                {hero.description}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
-
-<button
-  onClick={() => navigate("/donate")}
-  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-semibold"
+   {/* Hero Section */}
+<section
+  id="home"
+  className="
+    relative
+    min-h-screen
+    lg:h-screen
+    flex
+    items-center
+    overflow-x-hidden
+    bg-gradient-to-br from-teal-700 via-cyan-600 to-blue-800
+    animate-slow-gradient
+  "
 >
-  {hero.donateButtonText}
-</button>
+  {/* Paper / Editorial Texture */}
+  <div className="absolute inset-0 bg-white/5 backdrop-blur-[1px] pointer-events-none" />
 
-</div>
+  {/* Decorative Panels (desktop only) */}
+  <div className="hidden lg:block absolute left-0 top-0 h-full w-24 bg-white/10 pointer-events-none" />
+  <div className="hidden lg:block absolute right-0 top-0 h-full w-16 bg-black/10 pointer-events-none" />
 
-                <button
-                  onClick={() => setVideoModal(true)}
-                  className="bg-white/90 backdrop-blur border border-gray-200 text-gray-900 px-9 py-4 rounded-full font-semibold shadow transition transform hover:-translate-y-0.5"
-                >
-                  {hero.watchButtonText}
-                </button>
-              </div>
-            </div>
-            <div
-              className="relative order-1 lg:order-2 flex justify-center items-start"
-              style={{ animation: "fadeInRight 1.1s cubic-bezier(0.16, 1, 0.3, 1)" }}
-            >
-              <div className="relative w-full max-w-4xl overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-lg blur-xl -z-10" />
-                <div className="relative rounded-lg overflow-hidden shadow-2xl border-4 border-white/20 backdrop-blur-sm">
-                  <AnimatedImageWall images={hero.wallImages} />
-                  <div className="absolute z-50 left-1/2 bottom-4 -translate-x-1/2 w-80 bg-white/10 backdrop-blur-xsm border border-white/20 px-6 py-3 rounded-full shadow-lg pointer-events-none">
-                    <span className="text-sm font-bold text-white text-center block">
-                      Every pixel represents a life touched
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+  {/* CONTENT WRAPPER */}
+  <div
+    className="
+      relative
+      max-w-7xl
+      mx-auto
+      px-6
+      w-full
+      flex flex-col-reverse
+      gap-12
+      items-center
+      lg:grid lg:grid-cols-2
+      lg:gap-16
+      lg:items-center
+    "
+  >
+    {/* LEFT — TEXT */}
+    <div className="relative z-10 space-y-4 text-center lg:text-left lg:max-w-xl">
+      <span className="inline-block text-xs tracking-[0.3em] uppercase text-cyan-200 font-semibold">
+        {hero.tagline}
+      </span>
+
+      <h1 className="font-extrabold text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight text-white">
+        {hero.titleLine1}
+        <span className="block mt-2">{hero.titleLine2}</span>
+      </h1>
+
+      <p className="text-cyan-100 text-base sm:text-lg max-w-md mx-auto lg:mx-0">
+        {hero.description}
+      </p>
+
+      {/* Buttons */}
+      <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-4">
+        <button
+          onClick={() => navigate("/donate")}
+          className="
+            bg-white text-teal-700 font-semibold
+            px-6 py-3 rounded-full
+            hover:bg-cyan-100 transition
+          "
+        >
+          {hero.donateButtonText}
+        </button>
+
+        <button
+          onClick={() => setVideoModal(true)}
+          className="
+            border border-white/40 text-white
+            px-6 py-3 rounded-full
+            hover:bg-white/10 transition
+          "
+        >
+          {hero.watchButtonText}
+        </button>
+      </div>
+      <div className="lg:hidden h-[100px]"></div>
+    </div>
+
+    {/* RIGHT — IMAGE WALL */}
+    <div
+      className="
+        relative
+        w-screen
+        -mx-6
+        sm:-mx-6
+        lg:w-full
+        lg:mx-0
+        lg:h-full
+        lg:justify-self-end
+        lg:overflow-hidden
+      "
+    >
+      <div className="relative w-full h-[40vh] sm:h-[50vh] lg:h-full">
+        {/* Offset card (desktop only feel, harmless on mobile) */}
+        <div className="absolute -top-4 -right-4 w-full h-full bg-cyan-400/30 rotate-2 scale-105 pointer-events-none" />
+
+        {/* Main card */}
+        <div className="relative bg-white overflow-hidden shadow-2xl rounded-none lg:rounded-l-xl h-full">
+          <AnimatedImageWall
+            images={hero.wallImages}
+            height="100%"
+          />
+
+          {/* Caption */}
+          <div className="absolute bottom-0 w-full bg-teal-800/80 backdrop-blur px-4 py-2">
+            <p className="text-sm text-white font-semibold tracking-wide text-center">
+              Ayah Foundation
+            </p>
           </div>
-        )}
-      </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Bottom Wave */}
+  <div className="absolute -bottom-10 w-full overflow-hidden leading-none pointer-events-none">
+    <svg
+      className="block w-full h-20 sm:h-28 md:h-32"
+      viewBox="0 0 1200 120"
+      preserveAspectRatio="none"
+    >
+      <path
+        d="M0,0 C150,100 350,0 600,50 C850,100 1050,0 1200,50 L1200,120 L0,120 Z"
+        className="fill-white"
+      />
+    </svg>
+  </div>
+</section>
+
+
 
       {/* Stats Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
@@ -1423,6 +1509,17 @@ useEffect(() => {
         .rotate-y-180 {
           transform: rotateY(180deg);
         }
+          @keyframes blueWhiteShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-blue-white {
+  background-size: 300% 300%;
+  animation: blueWhiteShift 16s ease-in-out infinite;
+}
+
       `}</style>
     </div>
   );
