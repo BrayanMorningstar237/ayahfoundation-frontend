@@ -609,11 +609,18 @@ const About = () => {
                 <ExternalLink className="w-4 h-4" />
               </button>
               <button
-                onClick={() => navigate("/volunteer")}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-              >
-                Volunteer
-              </button>
+  onClick={() => {
+    const subject = encodeURIComponent("Volunteer Inquiry");
+    const body = encodeURIComponent(
+      "Hello Ayah Foundation Team,\n\nI would like to volunteer and contribute to your programs. Please provide me with more details.\n\nThank you."
+    );
+    window.location.href = `mailto:info@ayahfoundation.com?subject=${subject}&body=${body}`;
+  }}
+  className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+>
+  Volunteer
+</button>
+
             </div>
           </div>
         </section>
