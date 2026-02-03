@@ -19,9 +19,11 @@ interface ProgramItem {
   mainImage: string;
   description: string;
   stats: string;
+  sectionId: string; // 👈 IMPORTANT
   blocks?: ContentBlock[];
   gallery?: string[];
 }
+
 
 const Programs = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,23 +40,30 @@ const Programs = () => {
     }
 
     const fetchItem = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/public/sections/programs`);
-        const list = res.data?.content?.programs || [];
-        const found = list.find((p: ProgramItem) => p.id === id);
+  try {
+    const res = await axios.get(`${API_URL}/public/sections/programs`);
 
-        if (!found) {
-          setError("Program/Project not found");
-        } else {
-          setItem(found);
-        }
-      } catch (err) {
-        console.error("Failed to load program/project", err);
-        setError("Failed to load content. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
+    const sectionId = res.data?._id; // 👈 Mongo Section ID
+    const list = res.data?.content?.programs || [];
+
+    const found = list.find((p: ProgramItem) => p.id === id);
+
+    if (!found) {
+      setError("Program/Project not found");
+    } else {
+      setItem({
+        ...found,
+        sectionId // 👈 attach sectionId to item
+      });
+    }
+  } catch (err) {
+    console.error("Failed to load program/project", err);
+    setError("Failed to load content. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
     fetchItem();
   }, [id]);

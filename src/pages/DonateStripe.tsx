@@ -185,7 +185,7 @@ useEffect(() => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch(
-          `https://ayahfoundation-backend.onrender.com/api/donations/${donationId}`
+          `https://ayahfoundation-backend.onrender.com/api/donations/by-id/${donationId}`
         );
         if (!res.ok) throw new Error("Failed to fetch donation status");
 
