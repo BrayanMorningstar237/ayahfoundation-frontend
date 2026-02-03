@@ -505,7 +505,6 @@ useEffect(() => {
                   <input
                     type="number"
                     placeholder="Custom Amount"
-                    min={1}
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
                     className="w-full pl-10 pr-4 py-3 border border-blue-200 rounded-lg text-lg font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
