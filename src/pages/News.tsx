@@ -247,7 +247,15 @@ const News = () => {
                 <p className="text-blue-100 text-sm mb-4">
                   Help us continue sharing impactful stories.
                 </p>
-                <button className="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold inline-flex items-center gap-2 hover:bg-blue-50 transition">
+                <button onClick={() =>
+    navigate("/donate", {
+      state: {
+        section: "news",
+        objectId: article.id,
+        title: article.title,
+      },
+    })
+  }   className="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold inline-flex items-center gap-2 hover:bg-blue-50 transition">
                   Donate Now <ChevronRight className="w-4 h-4" />
                 </button>
               </div>

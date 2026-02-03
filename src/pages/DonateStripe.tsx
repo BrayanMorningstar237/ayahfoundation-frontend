@@ -3,6 +3,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import CheckoutForm from "./CheckoutForm";
 import logoimg from "../assets/images/logo/AyahFoundation.jpeg";
+import { useLocation } from "react-router-dom";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!);
 
@@ -20,6 +21,18 @@ export default function DonateStripePage() {
   const [anonymous, setAnonymous] = useState(false);
   const [purpose, setPurpose] = useState("General Donation");
 const [sectionId, setSectionId] = useState<string | null>(null);
+const location = useLocation();
+
+const preselect = location.state as
+  | {
+      section?: "news" | "programs" | "campaigns";
+      objectId?: string;
+      title?: string;
+    }
+  | null;
+
+  const isLockedPurpose = Boolean(preselect?.objectId);
+
   const presetAmounts = [10, 25, 50, 100, 250];
   const staticPurposes = [
   "General Donation",
@@ -39,6 +52,7 @@ const [sectionId, setSectionId] = useState<string | null>(null);
   "Clean Water & Sanitation",
   "Emergency Relief & Crisis Response"
 ];
+
 
 const [purposeOptions, setPurposeOptions] = useState<
   { label: string; sectionId?: string; objectId?: string }[]
@@ -97,6 +111,20 @@ news.content.news.forEach((n: any) => {
 
   fetchDynamicPurposes();
 }, []);
+
+useEffect(() => {
+  if (!preselect?.objectId || purposeOptions.length === 0) return;
+
+  const match = purposeOptions.find(
+    p => p.objectId === preselect.objectId
+  );
+
+  if (!match) return;
+
+  setPurpose(match.label);
+  setSectionId(match.sectionId || null);
+  setObjectId(match.objectId || null);
+}, [preselect, purposeOptions]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -492,16 +520,8 @@ news.content.news.forEach((n: any) => {
                   </label>
                   <select
   value={purpose}
-  onChange={(e) => {
-  const selected = purposeOptions.find(p => p.label === e.target.value);
-  setPurpose(selected?.label || "General Donation");
-  setSectionId(selected?.sectionId || null);
-  setObjectId(selected?.objectId || null);
-
-  console.log("Selected Purpose:", selected?.label);
-  console.log("Selected sectionId:", selected?.sectionId);
-  console.log("Selected objectId:", selected?.objectId);
-}}
+  onChange={e => setPurpose(e.target.value)}
+  disabled={isLockedPurpose}
   className="w-full p-3 border border-blue-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all appearance-none"
 >
   {purposeOptions.map((p) => (
@@ -510,6 +530,12 @@ news.content.news.forEach((n: any) => {
     </option>
   ))}
 </select>
+{isLockedPurpose && (
+  <p className="text-xs text-gray-500 mt-1">
+    This donation is linked to a specific story/campaign.
+  </p>
+)}
+
                   <div className="absolute right-3 top-10 pointer-events-none">
                     <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

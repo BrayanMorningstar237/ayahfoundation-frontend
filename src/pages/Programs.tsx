@@ -149,13 +149,24 @@ const Programs = () => {
             {item.description}
           </p>
 
-          {/* Donate Button */}
           <div className="pt-4">
-            <button className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-lg hover:shadow-xl active:shadow-md">
-              <Heart className="w-5 h-5" fill="currentColor" />
-              {isProject ? "Donate to this Project" : "Donate to this Program"}
-            </button>
-          </div>
+  <button
+    onClick={() =>
+      navigate("/donate", {
+        state: {
+          section: "programs",   // identify Programs
+          objectId: item.id,
+          title: item.title
+        }
+      })
+    }
+    className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-lg hover:shadow-xl active:shadow-md"
+  >
+    <Heart className="w-5 h-5" fill="currentColor" />
+    {isProject ? "Donate to this Project" : "Donate to this Program"}
+  </button>
+</div>
+
 
           {/* Content Blocks */}
           {item.blocks && item.blocks.length > 0 && (

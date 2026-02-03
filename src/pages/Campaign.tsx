@@ -255,7 +255,39 @@ export default function Campaign() {
                 </div>
               )}
             </div>
+            <div className="flex justify-center">
+          <button
+  onClick={() =>
+    navigate("/donate", {
+      state: {
+        section: "campaigns",
+        objectId: activeStory.id,
+        title: activeStory.title
+      }
+    })
+  }
+  className="
+    mt-10
+    inline-flex
+    items-center
+    justify-center
+    px-8
+    py-4
+    rounded-full
+    bg-blue-600
+    text-white
+    font-semibold
+    hover:bg-blue-700
+    transition
+    m-auto
+  "
+>
+  Take Action
+</button>
+</div>
           </article>
+          
+
         </>
       )}
 
