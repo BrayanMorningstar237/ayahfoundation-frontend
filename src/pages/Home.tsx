@@ -547,7 +547,7 @@ useEffect(() => {
             <div></div>
             <div className="flex justify-end lg:hidden">
               <div className="flex justify-center lg:hidden mr-5">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition">
+                <button onClick={() => navigate("/donate")} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition">
                   DONATE
                 </button>
               </div>
@@ -564,7 +564,7 @@ useEffect(() => {
               <a href="#programs" className="text-gray-700 hover:text-blue-600 font-medium transition">PROGRAMS</a>
               <a href="#campaigns" className="text-gray-700 hover:text-blue-600 font-medium transition">CAMPAIGNS</a>
               <a href="#contact" className="text-gray-700 hover:text-blue-600 font-medium transition">CONTACT</a>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-semibold transition">
+              <button onClick={() => navigate("/donate")} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-semibold transition">
                 DONATE
               </button>
             </div>
@@ -1403,7 +1403,7 @@ useEffect(() => {
           <p className="text-xl text-blue-50 mb-8 leading-relaxed">
             Transform lives today. Every contribution creates ripples of hope that extend far beyond what we can imagine.
           </p>
-          <button className="group bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-12 py-6 rounded-full text-xl font-bold shadow-2xl transform hover:scale-110 transition-all duration-500 inline-flex items-center">
+          <button onClick={() => navigate("/donate")} className="group bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-12 py-6 rounded-full text-xl font-bold shadow-2xl transform hover:scale-110 transition-all duration-500 inline-flex items-center">
             <Heart className="w-7 h-7 mr-3 group-hover:fill-gray-900" />
             DONATE NOW
             <ArrowRight className="w-7 h-7 ml-3 group-hover:translate-x-2 transition-transform duration-300" />
