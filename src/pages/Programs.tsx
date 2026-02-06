@@ -54,9 +54,15 @@ useEffect(() => {
       setDonationsLoading(true);
 
       const res = await axios.get(
-  `${API_URL}/donations/section/${item.sectionId}/object/${item.id}`
-
+  `${API_URL}/donations`,
+  {
+    params: {
+      sectionId: item.sectionId,
+      objectId: item.id
+    }
+  }
 );
+
 
 
       const completed = (res.data?.donations || []).filter(
