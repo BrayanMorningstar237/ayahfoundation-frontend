@@ -10,6 +10,15 @@ type NewsBlock = {
   value: string;
   description?: string;
 };
+type Donation = {
+  _id: string;
+  donorName?: string;
+  amount: number;
+  status: "pending" | "completed" | "failed";
+  createdAt: string;
+};
+
+
 
 const News = () => {
   const { id } = useParams();
@@ -18,7 +27,9 @@ const News = () => {
   const [allNews, setAllNews] = useState<any[]>([]);
   const [article, setArticle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
+const [donations, setDonations] = useState<Donation[]>([]);
+const [donationTotal, setDonationTotal] = useState(0);
+const [donationsLoading, setDonationsLoading] = useState(false);
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -40,6 +51,39 @@ const News = () => {
 
     load();
   }, [id]);
+useEffect(() => {
+  if (!article) return;
+
+  const fetchDonations = async () => {
+    try {
+      setDonationsLoading(true);
+
+      const res = await fetch(
+        `${API_URL}/donations/section/6967b69b5a491ae8ca37c3ee/object/${article.id}`
+      );
+      const json = await res.json();
+
+      const valid = (json?.donations || []).filter(
+        (d: Donation) => d.status !== "failed"
+      );
+
+      setDonations(valid);
+
+      const total = valid.reduce(
+  (sum: number, d: Donation) => sum + d.amount,
+  0
+);
+
+      setDonationTotal(total);
+    } catch (err) {
+      console.error("Failed to fetch news donations", err);
+    } finally {
+      setDonationsLoading(false);
+    }
+  };
+
+  fetchDonations();
+}, [article]);
 
   return (
     <>
@@ -259,6 +303,42 @@ const News = () => {
                   Donate Now <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
+<div className="bg-white rounded-2xl p-6 shadow-sm">
+  <h3 className="text-lg font-bold mb-4">Article Support</h3>
+
+  {donationsLoading && (
+    <p className="text-sm text-gray-500">Loading donations…</p>
+  )}
+
+  {!donationsLoading && donations.length === 0 && (
+    <p className="text-sm text-gray-500">
+      No donations yet. Be the first to support this story.
+    </p>
+  )}
+
+  {!donationsLoading && donations.length > 0 && (
+    <>
+      <p className="text-sm text-gray-600 mb-2">Total Raised</p>
+      <p className="text-2xl font-extrabold text-green-700 mb-4">
+        ${donationTotal.toFixed(2)}
+      </p>
+
+      <div className="space-y-2">
+        {donations.slice(0, 5).map(d => (
+          <div
+            key={d._id}
+            className="flex justify-between text-sm text-gray-700"
+          >
+            <span>{d.donorName || "Anonymous"}</span>
+            <span className="font-semibold text-green-700">
+              ${d.amount.toFixed(2)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </>
+  )}
+</div>
 
             </aside>
           </div>

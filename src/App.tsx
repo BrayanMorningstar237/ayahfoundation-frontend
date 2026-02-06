@@ -12,7 +12,7 @@ import Donation from "./pages/Donation";
 import Footer from "./components/Footer";
 import ScrollToTop from "./pages/ScrollToTop";
 import DonationSuccess from "./pages/DonationSuccess";
-
+import AllDonors from "./pages/AllDonors";
 function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
@@ -37,6 +37,8 @@ function App() {
             </PublicLayout>
           }
         />
+        <Route path="/donors" element={<PublicLayout><AllDonors /></PublicLayout>} />
+
 
         <Route
           path="/about"

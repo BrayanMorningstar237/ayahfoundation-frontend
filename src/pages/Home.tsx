@@ -559,15 +559,25 @@ useEffect(() => {
               </button>
             </div>
             <div className="hidden lg:flex items-center space-x-8">
-              <a href="#home" className="text-gray-700 hover:text-blue-600 font-medium transition">HOME</a>
-              <a href="#about" className="text-gray-700 hover:text-blue-600 font-medium transition">ABOUT</a>
-              <a href="#programs" className="text-gray-700 hover:text-blue-600 font-medium transition">PROGRAMS</a>
-              <a href="#campaigns" className="text-gray-700 hover:text-blue-600 font-medium transition">CAMPAIGNS</a>
-              <a href="#contact" className="text-gray-700 hover:text-blue-600 font-medium transition">CONTACT</a>
-              <button onClick={() => navigate("/donate")} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-semibold transition">
-                DONATE
-              </button>
-            </div>
+  <a href="#home" className="text-gray-700 hover:text-blue-600 font-medium transition">HOME</a>
+  <a href="#about" className="text-gray-700 hover:text-blue-600 font-medium transition">ABOUT</a>
+  <a href="#programs" className="text-gray-700 hover:text-blue-600 font-medium transition">PROGRAMS</a>
+  <a href="#campaigns" className="text-gray-700 hover:text-blue-600 font-medium transition">CAMPAIGNS</a>
+  <a href="#contact" className="text-gray-700 hover:text-blue-600 font-medium transition">CONTACT</a>
+
+  {/* Donations link */}
+  <a href="/donors" className="text-gray-700 hover:text-blue-600 font-medium transition">
+    DONATIONS
+  </a>
+
+  <button
+    onClick={() => navigate("/donate")}
+    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-semibold transition"
+  >
+    DONATE
+  </button>
+</div>
+
           </div>
           {isMenuOpen && (
             <div className="lg:hidden bg-white border-t">
@@ -577,6 +587,10 @@ useEffect(() => {
                 <a href="#programs" className="block text-gray-700 hover:text-blue-600 font-medium">PROGRAMS</a>
                 <a href="#campaigns" className="block text-gray-700 hover:text-blue-600 font-medium">CAMPAIGNS</a>
                 <a href="#contact" className="block text-gray-700 hover:text-blue-600 font-medium">CONTACT</a>
+                {/* Donor link */}
+  <a href="/donors" className="block text-gray-700 hover:text-blue-600 font-medium transition">
+    DONATIONS
+  </a>
               </div>
             </div>
           )}

@@ -21,6 +21,13 @@ interface SuccessStory {
   badge?: string;
   blocks?: StoryBlock[];
 }
+interface Donation {
+  _id: string;
+  donorName?: string;
+  amount: number;
+  status: "pending" | "completed" | "failed";
+  createdAt: string;
+}
 
 /* ================= SEO SCHEMA ================= */
 
@@ -108,6 +115,10 @@ export default function Campaign() {
 
   const [stories, setStories] = useState<SuccessStory[]>([]);
   const [loading, setLoading] = useState(true);
+const [donations, setDonations] = useState<Donation[]>([]);
+const [donationTotal, setDonationTotal] = useState(0);
+const [donationsLoading, setDonationsLoading] = useState(true);
+const [showAllDonations, setShowAllDonations] = useState(false);
 
   useEffect(() => {
     const fetchStories = async () => {
@@ -126,16 +137,60 @@ export default function Campaign() {
     fetchStories();
   }, []);
 
-  if (loading) {
+ 
+
+  const activeStory = id ? stories.find(s => s.id === id) : null;
+useEffect(() => {
+  if (!activeStory?.id) return;
+
+  console.log("Fetching donations for story ID:", activeStory.id);
+
+  const fetchDonations = async () => {
+    try {
+      setDonationsLoading(true);
+
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/donations`,
+        {
+          params: {
+            sectionId: "69685f175a491ae8ca37ca36", // campaigns section ObjectId
+            objectId: activeStory.id              // story id (UUID/string)
+          }
+        }
+      );
+
+      const completed = (res.data?.donations || []).filter(
+        (d: Donation) =>
+          d.status === "completed"
+      );
+
+      setDonations(completed);
+
+      const total = completed.reduce(
+        (sum: number, d: Donation) => sum + d.amount,
+        0
+      );
+
+      setDonationTotal(total);
+
+    } catch (err) {
+      console.error("Failed to fetch donations", err);
+    } finally {
+      setDonationsLoading(false);
+    }
+  };
+
+  fetchDonations();
+}, [activeStory?.id]);
+
+
+ if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
         Loading stories…
       </div>
     );
   }
-
-  const activeStory = id ? stories.find(s => s.id === id) : null;
-
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       {/* ================= NAV ================= */}
@@ -386,7 +441,80 @@ export default function Campaign() {
             ))}
           </motion.div>
         </section>
+        
       )}
+      <div className="pt-12 pb-10 px-5 lg:max-w-[50%] m-auto">
+  <h3 className="text-2xl font-bold text-gray-900 mb-6">Donations</h3>
+
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 bg-gray-50 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+    <div>
+      <p className="text-gray-700 text-lg">Total Donations Collected:</p>
+      <p className="text-3xl font-extrabold text-green-700 mt-1">
+        ${donationTotal.toFixed(2)}
+      </p>
+    </div>
+
+    <div className="mt-4 sm:mt-0 w-full sm:w-48 h-32 rounded-lg overflow-hidden flex items-center justify-center bg-gray-100">
+      <img
+        src={activeStory?.mainImage}
+        alt={activeStory?.title}
+        className="w-full h-full object-cover"
+      />
+    </div>
+  </div>
+
+  {donationsLoading && (
+    <div className="py-6 flex justify-center items-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+  )}
+
+  {!donationsLoading && donations.length === 0 && (
+    <div className="text-center py-12 bg-gray-50 rounded-2xl shadow-sm">
+      <p className="text-gray-500 mb-4">No donations yet. Be the first to support this campaign!</p>
+      <button
+        onClick={() =>
+          navigate("/donate", {
+            state: {
+              section: "campaigns",
+              objectId: activeStory?.id,
+              title: activeStory?.title
+            }
+          })
+        }
+        className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 active:bg-blue-800 transition-shadow shadow-lg hover:shadow-xl"
+      >
+        Donate to this Campaign
+      </button>
+    </div>
+  )}
+
+  {!donationsLoading && donations.length > 0 && (
+    <div className="space-y-3">
+      {(showAllDonations ? donations : donations.slice(0, 5)).map((d) => (
+        <div
+          key={d._id}
+          className="flex justify-between items-center p-4 rounded-lg bg-gray-50 border hover:bg-gray-100 transition"
+        >
+          <span className="font-medium text-gray-700">{d.donorName || "Anonymous"}</span>
+          <span className="font-semibold text-green-700">
+            ${(d.amount).toFixed(2)}
+          </span>
+        </div>
+      ))}
+
+      {donations.length > 5 && (
+        <button
+          onClick={() => setShowAllDonations(!showAllDonations)}
+          className="mt-4 px-4 py-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
+        >
+          {showAllDonations ? "Show Less" : "View All"}
+        </button>
+      )}
+    </div>
+  )}
+</div>
+
     </div>
   );
 }

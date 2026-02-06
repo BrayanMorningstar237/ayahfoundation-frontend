@@ -24,13 +24,62 @@ interface ProgramItem {
   gallery?: string[];
 }
 
+interface Donation {
+  _id: string;
+  donorName?: string;
+  amount: number;
+  status: "pending" | "completed" | "failed";
+  createdAt: string;
+}
+
+
+
 
 const Programs = () => {
+  const [donations, setDonations] = useState<Donation[]>([]);
+const [donationTotal, setDonationTotal] = useState(0);
+const [donationsLoading, setDonationsLoading] = useState(true);
+const [showAll, setShowAll] = useState(false);
+
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [item, setItem] = useState<ProgramItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+useEffect(() => {
+  if (!item) return;
+
+  const fetchDonations = async () => {
+    try {
+      setDonationsLoading(true);
+
+      const res = await axios.get(
+  `${API_URL}/donations/section/${item.sectionId}/object/${item.id}`
+
+);
+
+
+      const completed = (res.data?.donations || []).filter(
+        (d: Donation) => d.status === "completed"
+      );
+
+      setDonations(completed);
+
+      const total = completed.reduce(
+        (sum: number, d: Donation) => sum + d.amount,
+        0
+      );
+
+      setDonationTotal(total);
+    } catch (err) {
+      console.error("Failed to fetch donations", err);
+    } finally {
+      setDonationsLoading(false);
+    }
+  };
+
+  fetchDonations();
+}, [item]);
 
   useEffect(() => {
     if (!id) {
@@ -251,6 +300,99 @@ const Programs = () => {
             </div>
           )}
         </div>
+      
+  <div className="pt-12">
+  <h3 className="text-2xl font-bold text-gray-900 mb-6">Donations</h3>
+
+  {/* Total Donations + Program Image */}
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 bg-gray-50 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+    <div>
+      <p className="text-gray-700 text-lg">Total Donations Collected:</p>
+      <p className="text-3xl font-extrabold text-green-700 mt-1">
+        ${donationTotal.toFixed(2)}
+      </p>
+    </div>
+
+    {/* Program main image as visual */}
+    <div className="mt-4 sm:mt-0 w-full sm:w-48 h-32 rounded-lg overflow-hidden flex items-center justify-center bg-gray-100">
+      {item?.mainImage ? (
+        <img
+          src={item.mainImage}
+          alt={item.title}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+            (e.target as HTMLImageElement).parentElement!.innerHTML =
+              '<div class="w-full h-full flex items-center justify-center text-gray-400">Image not available</div>';
+          }}
+        />
+      ) : (
+        <span className="text-gray-400">[Image not available]</span>
+      )}
+    </div>
+  </div>
+
+  {/* Loading */}
+  {donationsLoading && (
+    <div className="py-6 flex justify-center items-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+  )}
+
+  {/* No donations yet */}
+  {!donationsLoading && donations.length === 0 && (
+    <div className="text-center py-12 bg-gray-50 rounded-2xl shadow-sm">
+      <p className="text-gray-500 mb-4">No donations yet. Be the first to support this program!</p>
+      <button
+        onClick={() =>
+          navigate("/donate", {
+            state: {
+              section: "programs",
+              objectId: item?.id,
+              title: item?.title
+            }
+          })
+        }
+        className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 active:bg-blue-800 transition-shadow shadow-lg hover:shadow-xl"
+      >
+        <Heart className="w-5 h-5" fill="currentColor" />
+        Donate Now
+      </button>
+    </div>
+  )}
+
+  {/* Donations list */}
+  {!donationsLoading && donations.length > 0 && (
+    <div className="space-y-3">
+      {(showAll ? donations : donations.slice(0, 5)).map((d) => (
+        <div
+          key={d._id}
+          className="flex justify-between items-center p-4 rounded-lg bg-gray-50 border hover:bg-gray-100 transition"
+        >
+          <span className="font-medium text-gray-700">{d.donorName || "Anonymous"}</span>
+          <span className="font-semibold text-green-700">
+            ${(d.amount).toFixed(2)}
+          </span>
+        </div>
+      ))}
+
+      {donations.length > 5 && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="mt-4 px-4 py-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
+        >
+          {showAll ? "Show Less" : "View All"}
+        </button>
+      )}
+    </div>
+  )}
+</div>
+
+
+
+
+
+
       </main>
     </div>
   );
