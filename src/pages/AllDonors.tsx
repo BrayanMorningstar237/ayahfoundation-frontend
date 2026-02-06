@@ -252,69 +252,75 @@ export default function AllDonors() {
                 </button>
 
                 {/* Expandable Content */}
-                {isExpanded && (
-                  <div className="border-t border-gray-100">
-                    {/* Link to related content if available */}
-                    {route && (
-                      <div className="px-4 sm:px-5 py-3 bg-blue-50 border-b border-blue-100">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(route);
-                          }}
-                          className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                          View related {meta?.sectionName}
-                        </button>
-                      </div>
-                    )}
+                {/* Suggest Donate Button */}
+{isExpanded && (
+  <div className="border-t border-gray-100">
+    {/* Link to related content if available */}
+    {route && (
+      <div className="px-4 sm:px-5 py-3 bg-blue-50 border-b border-blue-100">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(route);
+          }}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+          View related {meta?.sectionName}
+        </button>
+      </div>
+    )}
 
-                    {/* Donors List */}
-                    <div className="divide-y divide-gray-100">
-                      {grouped[purpose]
-                        .sort((a, b) =>
-                          new Date(b.createdAt).getTime() -
-                          new Date(a.createdAt).getTime()
-                        )
-                        .map(d => (
-                          <div key={d._id} className="p-4 sm:p-5 hover:bg-gray-50 transition">
-                            <div className="flex items-center justify-between gap-4">
-                              {/* Donor Info */}
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
-                                {/* Avatar */}
-                                <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm sm:text-base">
-                                  {(d.donorName || "A")[0].toUpperCase()}
-                                </div>
-                                
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">
-                                    {d.donorName || "Anonymous"}
-                                  </p>
-                                  <p className="text-xs sm:text-sm text-gray-500">
-                                    {new Date(d.createdAt).toLocaleDateString('en-US', { 
-                                      month: 'short', 
-                                      day: 'numeric', 
-                                      year: 'numeric' 
-                                    })}
-                                  </p>
-                                </div>
-                              </div>
+    {/* Suggest Donation */}
+    <div className="px-4 sm:px-5 py-3 bg-green-50 border-b border-green-100 flex items-center justify-between rounded-b-lg">
+      <p className="text-sm sm:text-base text-green-800 font-medium">
+        Inspired by this work? Your generosity can extend the impact.
+      </p>
+      <button
+        onClick={() => navigate("/donate")}
+        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full text-sm sm:text-base font-semibold transition"
+      >
+        Donate Now
+      </button>
+    </div>
 
-                              {/* Amount */}
-                              <div className="flex-shrink-0">
-                                <div className="text-lg sm:text-xl font-bold text-green-700">
-                                  ${d.amount.toFixed(2)}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
+    {/* Donors List */}
+    <div className="divide-y divide-gray-100">
+      {grouped[purpose]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .map(d => (
+          <div key={d._id} className="p-4 sm:p-5 hover:bg-gray-50 transition">
+            <div className="flex items-center justify-between gap-4">
+              {/* Donor Info */}
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm sm:text-base">
+                  {(d.donorName || "A")[0].toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                    {d.donorName || "Anonymous"}
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500">
+                    {new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </p>
+                </div>
+              </div>
+
+              {/* Amount */}
+              <div className="flex-shrink-0">
+                <div className="text-lg sm:text-xl font-bold text-green-700">
+                  ${d.amount.toFixed(2)}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+    </div>
+  </div>
+)}
+
 
               </div>
             );
