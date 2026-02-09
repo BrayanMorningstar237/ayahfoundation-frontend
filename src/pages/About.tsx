@@ -444,7 +444,7 @@ const About = () => {
                 {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
-                    onClick={() => navigate("/donation")}
+                    onClick={() => navigate("/donate")}
                     className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
                   >
                     Support Our Mission
