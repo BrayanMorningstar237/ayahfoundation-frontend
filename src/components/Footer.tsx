@@ -216,7 +216,7 @@ const Footer = () => {
             <a className="hover:text-white" href="#">
               Terms of Service
             </a>
-            <a className="hover:text-white" href="#">
+            <a className="hover:text-white" href="/donors">
               Transparency Report
             </a>
           </div>
