@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   ArrowRight,
   Phone,
@@ -8,24 +9,79 @@ import {
   Twitter,
   Instagram,
   Linkedin,
-  Youtube
+  Youtube,
+  Info,
+  Check
 } from "lucide-react";
 import logoimg from "../assets/images/logo/AyahFoundation.jpeg";
 import { useSiteSettings } from "../services/useSiteSettings";
 
-const Footer = () => {
-  const settings = useSiteSettings();
+const API_URL = import.meta.env.VITE_API_URL;
 
+const Footer = () => {
+  const [emailInput, setEmailInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<React.ReactNode | null>(null);
+
+  const subscribe = async () => {
+  if (!emailInput) return;
+
+  setLoading(true);
+  setMessage(null);
+
+  try {
+    const res = await fetch(`${API_URL}/newsletter/subscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: emailInput })
+    });
+
+    const data = await res.json(); // <-- parse JSON regardless of status
+
+    // Check backend flag first
+    if (data.alreadySubscribed) {
+      setMessage(
+        <span className="flex items-center gap-2 text-blue-400 justify-center">
+          <Info className="w-4 h-4" />
+          {data.message || "This email is already subscribed. You can try a different one."}
+        </span>
+      );
+    } else if (res.ok) {
+      // New subscription
+      setEmailInput("");
+      setMessage(
+        <span className="flex items-center gap-2 text-green-400 justify-center">
+          <Check className="w-4 h-4" />
+          Successfully subscribed! Thank you for staying connected.
+        </span>
+      );
+    } else {
+      // Other errors
+      setMessage(
+        <span className="flex items-center gap-2 text-red-400 justify-center">
+          <Info className="w-4 h-4" />
+          {data.message || "Something went wrong. Please try again."}
+        </span>
+      );
+    }
+  } catch (err) {
+    console.error(err);
+    setMessage(
+      <span className="flex items-center gap-2 text-red-400 justify-center">
+        <Info className="w-4 h-4" />
+        Network error. Please try again.
+      </span>
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  const settings = useSiteSettings();
   if (!settings) return null;
 
-  const {
-    siteName,
-    address,
-    email,
-    phone,
-    website,
-    socialLinks = {}
-  } = settings;
+  const { siteName, address, email, phone, website, socialLinks = {} } = settings;
 
   const socials = [
     { name: "Facebook", icon: Facebook, url: socialLinks.facebook },
@@ -36,31 +92,22 @@ const Footer = () => {
   ];
 
   const placeholder = (text: string) => (
-    <span className="italic text-gray-500">
-      {text} (add in site settings)
-    </span>
+    <span className="italic text-gray-500">{text} (add in site settings)</span>
   );
 
   return (
     <footer className="bg-gray-900 text-white py-16 px-4 sm:px-6 lg:px-8" id="contact">
       <div className="max-w-7xl mx-auto">
-
-        {/* MAIN GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
-
           {/* BRAND */}
           <div>
             <div className="flex items-center mb-6">
               <img src={logoimg} className="w-10 h-10 rounded" />
-              <span className="ml-3 text-2xl font-bold">
-                {siteName || "Ayah Foundation"}
-              </span>
+              <span className="ml-3 text-2xl font-bold">{siteName || "Ayah Foundation"}</span>
             </div>
-
             <p className="text-gray-400 mb-6 leading-relaxed">
               Empowering communities through care, compassion, and action.
             </p>
-
             <div className="flex gap-4">
               {socials.map(({ name, icon: Icon, url }) =>
                 url ? (
@@ -98,10 +145,7 @@ const Footer = () => {
                 ["/contact", "Contact"]
               ].map(([href, label]) => (
                 <li key={label}>
-                  <a
-                    href={href}
-                    className="text-gray-400 hover:text-white inline-flex items-center group"
-                  >
+                  <a href={href} className="text-gray-400 hover:text-white inline-flex items-center group">
                     <ArrowRight className="w-4 h-4 mr-2 opacity-0 group-hover:opacity-100 transition" />
                     {label}
                   </a>
@@ -114,27 +158,22 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-bold mb-6">Contact Us</h3>
             <ul className="space-y-4 text-gray-400">
-
               <li className="flex">
                 <MapPin className="w-5 h-5 mr-3 text-blue-400" />
                 {address || placeholder("Address not set")}
               </li>
-
               <li className="flex">
                 <Phone className="w-5 h-5 mr-3 text-blue-400" />
                 {phone || placeholder("Phone number not set")}
               </li>
-
               <li className="flex">
                 <Mail className="w-5 h-5 mr-3 text-blue-400" />
                 {email || placeholder("Email not set")}
               </li>
-
               <li className="flex">
                 <Globe className="w-5 h-5 mr-3 text-blue-400" />
                 {website || placeholder("Website not set")}
               </li>
-
             </ul>
           </div>
 
@@ -147,12 +186,21 @@ const Footer = () => {
 
             <input
               type="email"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
               placeholder="Your email address"
               className="w-full px-4 py-3 rounded-full bg-gray-800 border border-gray-700 mb-3"
             />
-            <button className="w-full bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-full font-semibold transition">
-              Subscribe
+
+            <button
+              onClick={subscribe}
+              disabled={loading}
+              className="w-full px-6 py-3 rounded-full font-semibold transition bg-blue-600 hover:bg-blue-700"
+            >
+              {loading ? "Subscribing..." : "Subscribe"}
             </button>
+
+            {message && <div className="mt-3 text-sm text-center">{message}</div>}
           </div>
         </div>
 
@@ -162,12 +210,17 @@ const Footer = () => {
             © {new Date().getFullYear()} {siteName || "Ayah Foundation"}. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm">
-            <a className="hover:text-white" href="#">Privacy Policy</a>
-            <a className="hover:text-white" href="#">Terms of Service</a>
-            <a className="hover:text-white" href="#">Transparency Report</a>
+            <a className="hover:text-white" href="#">
+              Privacy Policy
+            </a>
+            <a className="hover:text-white" href="#">
+              Terms of Service
+            </a>
+            <a className="hover:text-white" href="#">
+              Transparency Report
+            </a>
           </div>
         </div>
-
       </div>
     </footer>
   );
