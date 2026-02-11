@@ -150,29 +150,36 @@ const UnderConstruction = () => (
       <img
         src={logoimg}
         alt="Ayah Foundation"
-        className="w-20 h-20 mx-auto mb-6 rounded-full shadow-md animate-pulse-slow"
+        className="w-20 h-20 mx-auto mb-6 rounded-full shadow-md"
       />
-      <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
-        <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-        Website updates in progress
+
+      <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full bg-red-100 text-red-700 text-sm font-semibold">
+        <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+        Connection Issue
       </div>
+
       <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-        We're Improving Our Website
+        Network Error
       </h1>
+
       <p className="text-gray-600 text-lg leading-relaxed mb-6">
-        Ayah Foundation is currently rolling out updates to improve your
-        experience and better share our impact.
+        We’re unable to connect to the server right now.
         <br />
         <span className="font-medium text-gray-700">
-          Everything will be back shortly.
+          Please check your internet connection and try again.
         </span>
       </p>
-      <p className="text-sm text-gray-400">
-        Thank you for your patience and continued support 💙
-      </p>
+
+      <button
+        onClick={() => window.location.reload()}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-semibold transition"
+      >
+        Try Again
+      </button>
     </div>
   </div>
 );
+
 
 const isEmbedUrl = (url?: string) =>
   !!url && (url.includes('youtube') || url.includes('vimeo'));
